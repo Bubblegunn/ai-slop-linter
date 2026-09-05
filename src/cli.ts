@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { createRequire } from "node:module";
 import { lintText, fixText, rules } from "./index.js";
 import type { LintResult, Finding } from "./index.js";
 import { expand, skippedByDefault } from "./glob.js";
@@ -23,6 +24,7 @@ wrote it; it shows the tells, with line numbers, and fixes the safe ones.
   --warn                never exit 1; report only
   --cwd <dir>           working directory (default: current)
   -h, --help            this text
+  --version             print the version
 
 With no targets, lints the globs in .slop.json ("include", default ["**/*.md"]) under --cwd.
 Exit 1 on any error-severity finding or a score above --max-score, 2 on usage errors.
@@ -66,6 +68,9 @@ export function parse(argv: string[]): Options {
     else if (a === "--rules") o.listRules = true;
     else if (a === "-h" || a === "--help") {
       console.log(HELP);
+      process.exit(0);
+    } else if (a === "--version") {
+      console.log(createRequire(import.meta.url)("../../package.json").version as string);
       process.exit(0);
     } else if (a.startsWith("--")) throw new Error(`unknown option ${a} (see --help)`);
     else o.targets.push(a);

@@ -39,10 +39,12 @@ A fix (`Finding.fix`) is only allowed when applying it cannot change meaning: a 
 
 ## Releasing
 
-Maintainers only.
+Maintainers only. One command; the workflow does the rest.
 
-1. Bump `version` in `package.json`, `action.yml` (the `version` input default), `.claude-plugin/plugin.json` and `CITATION.cff`; add a `CHANGELOG.md` entry.
-2. Commit, then `git tag vX.Y.Z && git push origin main --tags`.
-3. The `release` workflow runs the tests and publishes to npm with provenance, so every published tarball is linked to the exact commit and workflow run that built it.
+1. Write the `## X.Y.Z (unreleased)` entry in `CHANGELOG.md` and merge it.
+2. On a clean, green `main`: `npm run release -- X.Y.Z` (or `patch`, `minor`, `major`; add `--dry-run` to see the plan). It dates the entry, sets the version in `package.json`, `CITATION.cff`, the `version` input default in `action.yml`, `.claude-plugin/plugin.json` and the pinned `uses:` line in the README, runs the tests, commits, tags `vX.Y.Z` and pushes.
+3. Watch the `release` workflow: it publishes to npm with provenance, creates the GitHub release from the CHANGELOG entry, and installs the published version from the registry on three operating systems.
 
-The workflow uses npm trusted publishing and holds no token. Before the first tagged release, the maintainer configures the trusted publisher on npmjs.com: package settings, Trusted publishing, GitHub Actions, repository `Bubblegunn/ai-slop-linter`, workflow `release.yml`, with "Allow npm publish" ticked.
+CI runs `scripts/release-gate.mjs` on every push: the version must agree across those files and `npm pack` may ship only the paths in `scripts/pack-allowlist.txt` (regenerate with `node scripts/release-gate.mjs --update` when the package layout changes on purpose).
+
+The workflow uses npm trusted publishing and holds no token. Before the first tagged release the maintainer configures the trusted publisher on npmjs.com: package settings, Trusted publishing, GitHub Actions, repository `Bubblegunn/ai-slop-linter`, workflow `release.yml`, "Allow npm publish" ticked.
