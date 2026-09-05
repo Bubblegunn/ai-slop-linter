@@ -58,7 +58,7 @@ güncellenen tek bir bulgu tablosu tutar (`pull-requests: write` ister; `comment
 ile yalnızca notlar kalır):
 
 ```yaml
-- uses: Bubblegunn/ai-slop-linter@v0.1.0
+- uses: Bubblegunn/ai-slop-linter@v0
 ```
 
 Geçmişi olan bir depoda `--baseline-write` bugünkü bulguları kaydeder, `--baseline` yalnızca

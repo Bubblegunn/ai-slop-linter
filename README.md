@@ -125,7 +125,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: Bubblegunn/ai-slop-linter@v0.1.0
+      - uses: Bubblegunn/ai-slop-linter@v0
         # with:
         #   max-score: "5"
         #   baseline: ".slop-baseline.json"
