@@ -75,9 +75,11 @@ npx skills add Bubblegunn/ai-slop-linter
 ## Kendi yazılarımızda
 
 5 Eylül 2026'da yazarın dört README'si ve sitesindeki on bir denemede çalıştırıldı:
-üç README A, product-engineer README C (kural listesi tam olarak `bold-label` kuralının
-yakaladığı kalıpta yazılmış), on bir denemenin tümü A. Bulgular İngilizce README'deki
-tabloda.
+ilk koşuda üç README A, product-engineer README C (kural listesi tam olarak `bold-label`
+kuralının yakaladığı kalıpta yazılmıştı), on bir denemenin tümü A. Aynı gün o README
+aracı önce gösterip sonra anlatacak biçimde yeniden yazıldı ve kural listesi düz cümleye
+döndü; linter için düzenlenmedi, yeni koşuda A (0). Bulgular ve ilk skorlar İngilizce
+README'deki tabloda.
 
 ## Gösteremedikleri
 

@@ -187,13 +187,16 @@ run on 5 September 2026 (`npx ai-slop-linter <file> --warn`):
 | [workproof](https://github.com/Bubblegunn/workproof) README | 1,105 | A (0) | none |
 | [proactive-gate](https://github.com/Bubblegunn/proactive-gate) README | 1,213 | A (0) | none |
 | [surviving-lines](https://github.com/Bubblegunn/surviving-lines) README | 712 | A (0) | none; the first run found 2 bold labels in a list, fixed the same day |
-| [product-engineer](https://github.com/Bubblegunn/product-engineer) README | 803 | C (8.7) | 7 bold labels in the rule list |
+| [product-engineer](https://github.com/Bubblegunn/product-engineer) README | 865 | A (0) | none; the first run scored C (8.7) for 7 bold labels in the rule list |
 | 8 of 11 portfolio essays | 856 to 1,849 each | A (0) | none |
 | the other 3 essays | 871 to 1,601 | A (0.4 to 1.1) | `state-of-the-art` once, `elevated` once, `in order to` twice |
 
-The C is honest: the product-engineer README lists its seven rules as `**Name:** text`
-bullets, which is exactly the pattern the rule flags. The linter runs on this
-repository's own Markdown in CI with `maxScore` 3.
+The C was real: the first product-engineer README listed its seven rules as
+`**Name:** text` bullets, exactly the pattern the rule flags. Later the same day that
+README was rewritten to show the tool before explaining it, and the rule list became
+plain sentences on the way; it was not edited to please the linter, and the row keeps
+the earlier score so the table stays a record of runs, not a scoreboard. The linter runs
+on this repository's own Markdown in CI with `maxScore` 3.
 
 ## What it cannot show
 
