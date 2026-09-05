@@ -37,18 +37,18 @@ npx ai-slop-linter README.md --fix    # apply the safe fixes in place
 
 ## What it looks like
 
-Real output on [`test/fixtures/sloppy.md`](test/fixtures/sloppy.md), a 252-word file
+Real output on [`test/fixtures/sloppy.md`](test/fixtures/sloppy.md), a 259-word file
 written to trip every rule once (first eleven of fifty findings):
 
 ```
-test/fixtures/sloppy.md  F (score 199.6, 252 words, 50 findings)
+test/fixtures/sloppy.md  F (score 194.2, 259 words, 50 findings)
      5:1   info    title-case-heading   Title Case heading; sentence case reads as written by a person
      7:1   warning announcing           "Let's dive into": make the point instead of announcing it
      7:26  error   dash                 em dash
      7:32  warning inflated             "is a testament to": say what happened; let the reader judge the importance
      7:37  warning ai-vocabulary        "testament": a word models reach for; use the plain one
      7:72  warning ai-vocabulary        "In today's fast-paced": a word models reach for; use the plain one
-     7:83  info    hyphen-density       7.9 hyphenated compounds per 100 words; drop the hyphen after the noun
+     7:83  info    hyphen-density       7.7 hyphenated compounds per 100 words; drop the hyphen after the noun ("the report is high quality")
      7:115 warning inflated             "stands as a": say what happened; let the reader judge the importance
      7:127 warning inflated             "pivotal moment": say what happened; let the reader judge the importance
      7:127 warning ai-vocabulary        "pivotal": a word models reach for; use the plain one

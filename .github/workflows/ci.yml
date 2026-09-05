@@ -67,7 +67,9 @@ jobs:
       - run: npm run build --if-present
       - run: node scripts/release-gate.mjs
   bench:
-    # The committed precision table matches a fresh run of the rules over the corpus.
+    # The committed precision and typography tables, and the README's demo block, match a
+    # fresh run. The demo block is here because it went stale when the rules changed and
+    # nothing caught it: a visitor running the advertised command got different output.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -81,6 +83,7 @@ jobs:
       - run: npm run build
       - run: node bench/precision.mjs --check
       - run: node bench/typography.mjs --check
+      - run: node scripts/readme-demo.mjs --check
   ci-ok:
     # The one check the branch ruleset requires; it fails if any job above failed or was cancelled.
     if: always()
