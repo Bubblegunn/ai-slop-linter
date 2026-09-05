@@ -110,15 +110,16 @@ because `not just X but Y` needs a rewritten sentence, not a character swap.
 
 ## In a repository
 
-**Pull requests.** The Action lints the pull request description and every changed
-Markdown file and annotates the diff:
+**Pull requests.** The Action lints the pull request title, its description and every
+changed Markdown file, annotates the lines on the files tab, and keeps one comment on the
+pull request with the findings table, updated in place on every push:
 
 ```yaml
 name: prose
 on: pull_request
 permissions:
   contents: read
-  pull-requests: read
+  pull-requests: write   # read is enough with comment: "false"
 jobs:
   slop:
     runs-on: ubuntu-latest
@@ -127,8 +128,21 @@ jobs:
       - uses: Bubblegunn/ai-slop-linter@v0.1.0
         # with:
         #   max-score: "5"
+        #   baseline: ".slop-baseline.json"
+        #   comment: "false"
         #   warn-only: "true"
 ```
+
+| input | default | what it does |
+|---|---|---|
+| `files` | changed `.md` files | Files or globs to lint instead of the changed Markdown |
+| `pr-body` | `true` | Lint the title and description as one more text |
+| `comment` | `true` | Post and update the review comment; needs `pull-requests: write` |
+| `baseline` | none | A file from `--baseline-write`; only new findings fail |
+| `max-score` | `10` | Fail above this weighted score per 1,000 words |
+| `warn-only` | `false` | Annotate and comment, never fail |
+
+The Action outputs `findings`, the total count, for a later step.
 
 **Commit messages.** A `commit-msg` hook refuses a message with an error-severity tell:
 
@@ -155,8 +169,9 @@ Entries are keyed by file, rule and the sentence, not by line number, so editing
 a known tell does not make it new. Commit the file; `"baseline": "path"` in `.slop.json`
 names a different one. When a file is cleaned up, run `--baseline-write` again to shrink it.
 
-**CI output.** `--format github` prints workflow annotations; `--format json` prints
-findings with `fixable` flags for other tools.
+**CI output.** `--format github` prints workflow annotations and an error line for every
+text that fails; `--format markdown` prints the table the Action posts, for an issue or a
+review; `--format json` prints findings with `fixable` flags for other tools.
 
 ## For agents
 

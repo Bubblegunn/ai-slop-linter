@@ -33,6 +33,24 @@ test("stdin, json and github formats", () => {
   const g = run(["-", "--format", "github"], { input: "Let's dive in — now.\n" });
   assert.match(g.out, /::error file=stdin,line=1,col=\d+,title=dash::/);
   assert.match(g.out, /::warning file=stdin,line=1,col=1,title=announcing::/);
+  assert.match(g.out, /::error file=stdin,title=ai-slop-linter::F, score \d+(\.\d+)?, 2 findings; 1 error-severity tell/);
+  const over = run(["-", "--format", "github", "--max-score", "1"], { input: "Let's dive in now.\n" });
+  assert.match(over.out, /::error file=stdin,title=ai-slop-linter::.*score above max-score 1/);
+  const fine = run(["-", "--format", "github"], { input: "Plain words here.\n" });
+  assert.match(fine.out, /^::notice file=stdin,title=ai-slop-linter::A, score 0, 0 findings$/m);
+  assert.equal(fine.code, 0);
+});
+
+test("markdown format is a pasteable table with the same facts", () => {
+  const m = run(["-", "--format", "markdown"], { input: "Let's dive in — now.\n" });
+  assert.equal(m.code, 1);
+  assert.match(m.out, /^\*\*ai-slop-linter\*\*: 2 findings in 1 text, 1 failing\.$/m);
+  assert.match(m.out, /^\| stdin \| F \(fails\) \| \d+(\.\d+)? \| 2 \|$/m);
+  assert.match(m.out, /^\| stdin:1 \| dash \| error \| em dash[^|]*\|$/m);
+  assert.match(m.out, /does not judge who wrote/);
+  const clean = run(["-", "--format", "markdown"], { input: "Plain words here.\n" });
+  assert.match(clean.out, /0 findings in 1 text\.$/m);
+  assert.ok(!/\| where \|/.test(clean.out), "no findings table when there is nothing to list");
 });
 
 test("--fix rewrites the file and reports what it applied", async () => {

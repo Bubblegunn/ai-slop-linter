@@ -19,7 +19,7 @@ Lints text for the patterns that mark writing as machine-made. It does not guess
 wrote it; it shows the tells, with line numbers, and fixes the safe ones.
 
   --fix                 apply safe fixes in place (dashes, curly quotes, filler phrases)
-  --format <f>          text (default), json, or github (workflow annotations)
+  --format <f>          text (default), json, github (workflow annotations) or markdown (a table to paste)
   --ignore <rule,...>   skip rules by id
   --max-score <n>       fail when a file's score is above n (default from .slop.json, else 10)
   --warn                never exit 1; report only
@@ -40,7 +40,7 @@ interface Options {
   commitMsg?: string;
   pr?: string;
   fix: boolean;
-  format: "text" | "json" | "github";
+  format: "text" | "json" | "github" | "markdown";
   ignore: string[];
   maxScore: number | undefined;
   warn: boolean;
@@ -66,7 +66,7 @@ export function parse(argv: string[]): Options {
     else if (a === "--fix") o.fix = true;
     else if (a === "--format") {
       const f = next();
-      if (f !== "text" && f !== "json" && f !== "github") throw new Error(`--format must be text, json or github`);
+      if (f !== "text" && f !== "json" && f !== "github" && f !== "markdown") throw new Error(`--format must be text, json, github or markdown`);
       o.format = f;
     } else if (a === "--ignore") o.ignore.push(...next().split(",").map((s) => s.trim()).filter(Boolean));
     else if (a === "--max-score") o.maxScore = Number(next());
@@ -151,15 +151,41 @@ function renderText(results: (LintResult & { baselined?: number })[], fixed: Map
   return out.join("\n");
 }
 
-function renderGithub(results: LintResult[]): string {
+export function renderGithub(results: LintResult[], maxScore: number): string {
   const out: string[] = [];
   for (const r of results) {
     for (const f of r.findings) {
       const level = f.severity === "error" ? "error" : f.severity === "warning" ? "warning" : "notice";
       out.push(`::${level} file=${r.path},line=${f.line},col=${f.column},title=${f.rule}::${f.message}`);
     }
-    out.push(`::notice file=${r.path}::${r.grade}, score ${r.score}, ${r.findings.length} findings`);
+    const summary = `${r.grade}, score ${r.score}, ${r.findings.length} findings`;
+    if (r.errors > 0) out.push(`::error file=${r.path},title=ai-slop-linter::${summary}; ${r.errors} error-severity tell${r.errors === 1 ? "" : "s"}`);
+    else if (r.score > maxScore) out.push(`::error file=${r.path},title=ai-slop-linter::${summary}; score above max-score ${maxScore}`);
+    else out.push(`::notice file=${r.path},title=ai-slop-linter::${summary}`);
   }
+  return out.join("\n");
+}
+
+const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+
+/** A Markdown table for a pull request comment or an issue; the same facts as the text output. */
+export function renderMarkdown(results: LintResult[], maxScore: number): string {
+  const total = results.reduce((n, r) => n + r.findings.length, 0);
+  const failing = results.filter((r) => r.errors > 0 || r.score > maxScore);
+  const out: string[] = [];
+  out.push(`**ai-slop-linter**: ${total} finding${total === 1 ? "" : "s"} in ${results.length} text${results.length === 1 ? "" : "s"}${failing.length ? `, ${failing.length} failing` : ""}.`);
+  out.push("");
+  out.push("| text | grade | score | findings |");
+  out.push("|---|---|---|---|");
+  for (const r of results) out.push(`| ${cell(r.path)} | ${r.grade}${failing.includes(r) ? " (fails)" : ""} | ${r.score} | ${r.findings.length} |`);
+  if (total) {
+    out.push("");
+    out.push("| where | rule | severity | message |");
+    out.push("|---|---|---|---|");
+    for (const r of results) for (const f of r.findings) out.push(`| ${cell(r.path)}:${f.line} | ${f.rule} | ${f.severity} | ${cell(f.message)} |`);
+  }
+  out.push("");
+  out.push("Scores are weighted findings per 1,000 words; the tool lists tells and does not judge who wrote the text.");
   return out.join("\n");
 }
 
@@ -210,7 +236,8 @@ async function main() {
     results = applyBaseline(results, parseBaseline(readFileSync(baselineFile, "utf8"))).results;
   }
   if (o.format === "json") console.log(JSON.stringify(results.map((r) => ({ ...r, findings: r.findings.map(withoutFix) })), null, 2));
-  else if (o.format === "github") console.log(renderGithub(results));
+  else if (o.format === "github") console.log(renderGithub(results, maxScore));
+  else if (o.format === "markdown") console.log(renderMarkdown(results, maxScore));
   else console.log(renderText(results, fixed));
   const failing = results.filter((r) => r.errors > 0 || r.score > maxScore);
   if (failing.length && !o.warn) process.exit(1);

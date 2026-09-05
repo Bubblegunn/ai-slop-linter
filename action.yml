@@ -1,5 +1,5 @@
 name: ai-slop-linter
-description: Lint the pull request description and the changed Markdown files for AI-writing tells, with line-level annotations.
+description: Lint the pull request title, description and changed Markdown files for AI-writing tells, with line-level annotations and one sticky review comment.
 author: Efe Genc
 branding:
   icon: edit-3
@@ -10,67 +10,100 @@ inputs:
     required: false
     default: ""
   pr-body:
-    description: Also lint the pull request description on pull_request events.
+    description: Also lint the pull request title and description on pull_request events.
     required: false
     default: "true"
+  comment:
+    description: Post one comment on the pull request with the findings table, updated in place on every run. Needs `pull-requests: write`. Set to "false" for annotations only.
+    required: false
+    default: "true"
+  baseline:
+    description: Path to a baseline file written with `--baseline-write`; when set, only findings the baseline does not list fail the job.
+    required: false
+    default: ""
   max-score:
     description: Fail when a file's score is above this number (weighted findings per 1,000 words).
     required: false
     default: "10"
   warn-only:
-    description: Annotate but never fail the job.
+    description: Annotate and comment but never fail the job.
     required: false
     default: "false"
   version:
     description: ai-slop-linter version to run.
     required: false
     default: "0.1.0"
+outputs:
+  findings:
+    description: Total number of findings across the files and the pull request text.
+    value: ${{ steps.lint.outputs.findings }}
 runs:
   using: composite
   steps:
-    - name: Lint changed Markdown
+    - name: Lint the changed Markdown and the pull request text
+      id: lint
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        EVENT: ${{ github.event_name }}
         PR: ${{ github.event.pull_request.number }}
         FILES: ${{ inputs.files }}
+        PR_BODY: ${{ inputs.pr-body }}
+        COMMENT: ${{ inputs.comment }}
+        BASELINE: ${{ inputs.baseline }}
         MAX: ${{ inputs.max-score }}
         WARN: ${{ inputs.warn-only }}
         VERSION: ${{ inputs.version }}
       run: |
         set -uo pipefail
-        flags=(--format github --max-score "$MAX")
+        flags=(--max-score "$MAX")
         [ "$WARN" = "true" ] && flags+=(--warn)
+        [ -n "$BASELINE" ] && flags+=(--baseline --baseline-file "$BASELINE")
+
+        # Targets: the given files, else the Markdown the pull request changed, else everything.
         if [ -n "$FILES" ]; then
           # shellcheck disable=SC2086
           set -- $FILES
         elif [ -n "${PR:-}" ]; then
-          mapfile -t changed < <(gh pr diff "$PR" --name-only | grep -Ei '\.(md|mdx|markdown)$' || true)
-          set -- "${changed[@]}"
+          changed=()
+          while IFS= read -r f; do [ -n "$f" ] && changed+=("$f"); done < <(gh pr diff "$PR" --name-only | grep -Ei '\.(md|mdx|markdown)$' || true)
+          set -- ${changed[@]+"${changed[@]}"}
         else
           set -- '**/*.md'
         fi
+
+        # The pull request title and description are one more text, fed on stdin.
+        pr_text=""
+        if [ "$PR_BODY" = "true" ] && [ "$EVENT" = "pull_request" ] && [ -n "${PR:-}" ]; then
+          pr_text="$(gh pr view "$PR" --json title,body --jq '.title + "\n\n" + (.body // "")')"
+          set -- "$@" -
+        fi
         if [ "$#" -eq 0 ]; then
-          echo "no Markdown changed; nothing to lint"
+          echo "no Markdown changed and no pull request text; nothing to lint"
+          echo "findings=0" >> "$GITHUB_OUTPUT"
           exit 0
         fi
-        npx --yes "ai-slop-linter@${VERSION}" "${flags[@]}" "$@"
-    - name: Lint the pull request description
-      if: ${{ inputs.pr-body == 'true' && github.event_name == 'pull_request' }}
-      shell: bash
-      env:
-        GH_TOKEN: ${{ github.token }}
-        PR: ${{ github.event.pull_request.number }}
-        MAX: ${{ inputs.max-score }}
-        WARN: ${{ inputs.warn-only }}
-        VERSION: ${{ inputs.version }}
-      run: |
-        set -uo pipefail
-        flags=(--format github --max-score "$MAX")
-        [ "$WARN" = "true" ] && flags+=(--warn)
-        body="$(gh pr view "$PR" --json body --jq .body)"
-        if [ -z "$body" ]; then
-          echo "empty pull request description; nothing to lint"
-          exit 0
+
+        run() { printf '%s\n' "$pr_text" | npx --yes "ai-slop-linter@${VERSION}" "${flags[@]}" "$@"; }
+        # Annotations on the files tab; this exit code is the job's verdict.
+        run --format github "$@"
+        status=$?
+        # Findings count and the comment body, from the same run in other formats.
+        count=$(run --format json --warn "$@" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).reduce((n,r)=>n+r.findings.length,0)))')
+        echo "findings=${count}" >> "$GITHUB_OUTPUT"
+
+        if [ "$COMMENT" = "true" ] && [ "$EVENT" = "pull_request" ] && [ -n "${PR:-}" ]; then
+          marker='<!-- ai-slop-linter -->'
+          body_file="$(mktemp)"
+          { printf '%s\n' "$marker"; run --format markdown --warn "$@" | sed 's/^| stdin/| pull request text/'; } > "$body_file"
+          existing=$(gh api "repos/${REPO}/issues/${PR}/comments" --paginate --jq ".[] | select(.body | startswith(\"${marker}\")) | .id" 2>/dev/null | head -1 || true)
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/${REPO}/issues/comments/${existing}" -F "body=@${body_file}" >/dev/null && echo "updated the review comment"
+          elif [ "$count" != "0" ]; then
+            gh api "repos/${REPO}/issues/${PR}/comments" -F "body=@${body_file}" >/dev/null && echo "posted the review comment"
+          else
+            echo "no findings and no earlier comment; nothing to post"
+          fi
         fi
-        printf '%s\n' "$body" | npx --yes "ai-slop-linter@${VERSION}" "${flags[@]}" -
+        exit "$status"

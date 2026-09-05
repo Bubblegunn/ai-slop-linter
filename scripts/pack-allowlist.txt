@@ -1,6 +1,8 @@
 LICENSE
 README.md
 README.tr.md
+dist/src/baseline.d.ts
+dist/src/baseline.js
 dist/src/cli.d.ts
 dist/src/cli.js
 dist/src/doc.d.ts
