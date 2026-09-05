@@ -97,6 +97,46 @@ satırda yine belirsiz kalır. Bu yüzden sütun mantıksal kalıyor ve bulgu, e
 `excerpt` parçasını da taşıyor: okumak için güvenilir olan parça alıntıdır, sütun ise oraya
 atlayacak araç içindir.
 
+## İngilizce yazmıyorsanız
+
+Buradaki her kural İngilizce metne bakılarak yazıldı ve İngilizce metin üzerinde ölçüldü. Bu
+yüzden yayına çıkmadan önce kurallar, on üç dilde doğru dizilmiş yayımlanmış metinlere karşı
+çalıştırıldı: Lehçe Conan Doyle, Macarca Jókai, Rusça Çehov, Fransızca Dumas ve dokuz metin
+daha; her biri kendi dilinin gerektirdiği gibi noktalanmış. Tablo
+[`bench/TYPOGRAPHY.md`](bench/TYPOGRAPHY.md), derlem ve lisansları `bench/typography` içinde,
+gerekçe ise [`docs/typography-across-languages.md`](docs/typography-across-languages.md)
+dosyasında.
+
+Bir kural sınıfta kaldı. `dash` bu araçtaki en yüksek şiddete sahip ve doğru yazılmış metinde
+1.000 kelime başına şu oranlarda konuşuyor:
+
+| Lehçe | Macarca | Rusça | Fransızca | Almanca | İngilizce insan temeli |
+|---:|---:|---:|---:|---:|---:|
+| 73,5 | 52,1 | 24,0 | 22,0 | 6,7 | 1,0 |
+
+Lehçe, Macarca ve Rusça dosyalar kendi dillerini doğru noktaladıkları için F alıyor. Uzun tire
+Fransızcada olağandır, İspanyolcada diyaloğu açar, Rusçada ise "olmak" fiilinin yerinde durur;
+yani orada süs değil dilbilgisidir.
+
+Bu yüzden araca ne yazdığınızı söyleyin:
+
+```json
+{ "language": "tr" }
+```
+
+ya da tek çalıştırma için `--language tr`. Varsayılan İngilizcedir, yani ayarı yapmayan bir
+depo için hiçbir şey değişmez. Dil İngilizce değilken `dash` çalışmaz ve çıktı bunu yazar,
+sessizce temiz görünmez. Başka hiçbir kural devre dışı kalmaz, çünkü başka hiçbiri için
+ölçülmüş bir gerekçe yok.
+
+İki şeyi iddia edemez. Kuralların on beşi İngilizce kelimelerden kuruludur; İngilizce dışında
+haksız değil, işlevsizdirler: tamamen bir model tarafından yazılmış Fransızca bir README
+hepsini geçer, çünkü `in order to` Fransızca bir kalıp değildir. Ve bir yoğunluk eşiği `dash`
+kuralını kurtarmıyor: doğru Almanca metin 1.000 kelimede 6,7 bulguda,
+[`bench/PRECISION.md`](bench/PRECISION.md) içindeki makine derlemi ise 5,7'de duruyor; iki
+dağılım örtüşüyor ve hiçbir genel sayı Alman bir yazarı bir modelden ayırmıyor. Bu, vazgeçmeden
+önce ölçüldü.
+
 ## Ölçüm
 
 Bir linter boş yere uyarırsa kaldırılır, o yüzden yanlış uyarı maliyeti iddia değil ölçüm

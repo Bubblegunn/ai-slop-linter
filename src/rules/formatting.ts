@@ -91,8 +91,16 @@ export const curlyQuotes: Rule = {
     // A document that never uses a straight mark chose its typography; flagging it
     // would report every line of a typeset book. The tell is the mixture, which is
     // what pasting from an interface that substitutes smart quotes leaves behind.
-    if (!/["']/.test(doc.masked)) return [];
-    return scan(doc, curlyQuotes, /[\u201C\u201D\u2018\u2019]/g, (m) => `curly ${/[\u201C\u201D]/.test(m[0]!) ? "quote" : "apostrophe"} among straight ones; the file mixes both`, (m) => (/[\u201C\u201D]/.test(m[0]!) ? '"' : "'"));
+    //
+    // Each family is judged against its own straight form. Chinese quotes with the curly
+    // double marks as its primary quotation marks and nests straight apostrophes inside
+    // them, which is correct Chinese and not a mixture of anything: judging both families
+    // together reported every quotation mark in the file, 21.7 per 1,000 words on the
+    // Chinese text in bench/TYPOGRAPHY.md.
+    const findings: Finding[] = [];
+    if (/"/.test(doc.masked)) findings.push(...scan(doc, curlyQuotes, /[\u201C\u201D]/g, () => "curly quote among straight ones; the file mixes both", () => '"'));
+    if (/'/.test(doc.masked)) findings.push(...scan(doc, curlyQuotes, /[\u2018\u2019]/g, () => "curly apostrophe among straight ones; the file mixes both", () => "'"));
+    return findings.sort((a, b) => a.line - b.line || a.column - b.column);
   },
 };
 
@@ -111,7 +119,13 @@ export const hyphenDensity: Rule = {
   ignoreWhen:
     "The compounds are established technical terms in your domain and dropping the hyphen would change the meaning.",
   check(doc) {
-    const matches = [...doc.masked.matchAll(/\b[a-z]+-[a-z]+\b/gi)];
+    // A Unicode letter class rather than [a-z]: the ASCII version could not match
+    // "peut-être" or any hyphenated compound carrying a letter outside the English
+    // alphabet, so the rule quietly meant nothing outside ASCII. Measured after the change
+    // on every file in bench/corpus and bench/typography: the highest rate in any of them is
+    // 1.4 per 100 words, against a threshold of 3, so nothing new fires. One text per
+    // language cannot say how often a language that hyphenates freely would cross it.
+    const matches = [...doc.masked.matchAll(/(?<![\p{L}\p{N}_])\p{L}+-\p{L}+(?![\p{L}\p{N}_])/gu)];
     if (doc.words < 100) return [];
     const per100 = (matches.length / doc.words) * 100;
     if (per100 <= 3) return [];

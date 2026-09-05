@@ -284,3 +284,51 @@ test("masking survives CRLF line endings, which is how the fixture arrives on Wi
     assert.ok(!/^(?: {4}|\t|>|<pre)/.test(lines[f.line - 1] ?? ""), `${f.rule} fired inside quoted code at line ${f.line}`);
   }
 });
+
+test("a declared language stands the English typography rule down", () => {
+  // Measured in bench/TYPOGRAPHY.md: `dash` fires 73.5 times per 1,000 words on correct
+  // Polish, 52.1 on Hungarian and 24.0 on Russian, against 1.0 on the English baseline,
+  // because the mark is ordinary punctuation there and in Russian stands in for the verb.
+  // The language is configuration, never a guess: a README with English headings over
+  // French prose defeats detection in both directions.
+  const french = "Le service — celui-ci — permet aux clients de voir leur commande.";
+  const asEnglish = lintText("README.md", french);
+  assert.equal(asEnglish.findings.filter((f) => f.rule === "dash").length, 2);
+  assert.deepEqual(asEnglish.stoodDown, []);
+
+  const declared = lintText("README.md", french, { language: "fr" });
+  assert.deepEqual(declared.findings, []);
+  assert.deepEqual(declared.stoodDown, ["dash"]);
+
+  // English is the default and every English tag keeps the rule on.
+  for (const tag of ["en", "en-GB", "EN_us"]) {
+    assert.equal(lintText("README.md", french, { language: tag }).findings.length, 2, tag);
+  }
+  // Only rules whose evidence is English stand down; the rest still run.
+  const mixed = lintText("README.md", "Nous allons dive right in — c'est parti. Let's dive in.", { language: "fr" });
+  assert.ok(mixed.findings.every((f) => f.rule !== "dash"));
+});
+
+test("curly quotes are judged against the straight form of their own family", () => {
+  // Chinese quotes with the curly double marks and nests straight apostrophes inside them,
+  // which is correct Chinese and not a paste artifact. Judging both families together
+  // reported every quotation mark in the file: 21.7 per 1,000 words on the Chinese text in
+  // bench/TYPOGRAPHY.md, now zero.
+  const chinese = "他说：“这是 'a' 的意思。”我们照做了。";
+  assert.deepEqual(lintText("zh.md", chinese).findings.filter((f) => f.rule === "curly-quotes"), []);
+  // The English case the rule was written for still fires: straight and curly doubles mixed.
+  const pasted = 'The flag is "--fix". The model said “this is fine” about it.';
+  assert.equal(lintText("README.md", pasted).findings.filter((f) => f.rule === "curly-quotes").length, 2);
+  // And the apostrophe family on its own.
+  const apostrophes = "it's here and it’s there";
+  assert.equal(lintText("README.md", apostrophes).findings.filter((f) => f.rule === "curly-quotes").length, 1);
+});
+
+test("hyphen-density counts compounds in any alphabet", () => {
+  // The pattern was [a-z]+-[a-z]+, so "peut-être" and every other non-ASCII compound was
+  // invisible and the rule quietly did nothing outside English.
+  const words = Array.from({ length: 120 }, (_, i) => `mot${i}`).join(" ");
+  const compounds = Array.from({ length: 8 }, () => "peut-être").join(" ");
+  const found = lintText("fr.md", `${compounds} ${words}`).findings.filter((f) => f.rule === "hyphen-density");
+  assert.equal(found.length, 1, JSON.stringify(found));
+});

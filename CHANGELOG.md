@@ -2,6 +2,17 @@
 
 ## 0.1.4
 
+Before this went out, every rule was run against correct published typography in thirteen languages, one text per language, all public domain and all typeset before any language model existed. The table is `bench/TYPOGRAPHY.md`, the corpus and its licences are in `bench/typography`, and the argument is `docs/typography-across-languages.md`.
+
+One rule failed badly. `dash` carries the highest severity here and fires 73.5 times per 1,000 words on correct Polish, 52.1 on Hungarian, 24.0 on Russian and 22.0 on French, against 1.0 on the English human baseline. The Polish, Hungarian and Russian files grade F for punctuating their own language correctly: the em dash is ordinary in French, opens dialogue in Spanish, and in Russian stands where the verb would go. So a repository can now declare what it writes in, `"language": "fr"` in `.slop.json` or `--language fr`, and `dash` stands down, with the run saying which rules did not run so a quiet result is never read as a clean one. English is the default, so no existing repository sees a change. This is configuration rather than detection on purpose: a README with English headings over French prose defeats a guess in both directions. A density threshold was measured first and does not work, because correct German prose sits at 6.7 findings per 1,000 words and the machine corpus in `bench/PRECISION.md` sits at 5.7.
+
+`curly-quotes` now judges each quote family against the straight form of its own family. Chinese uses the curly double marks as its primary quotation marks and nests straight apostrophes inside them, which is correct Chinese; the rule read that as a paste artifact and reported 21.7 findings per 1,000 words on the Chinese text, now zero, with the English corpus unmoved. The cost is that a file whose only straight mark is an apostrophe no longer has its curly double quotes reported.
+
+`hyphen-density` counted `[a-z]+-[a-z]+`, so `peut-être` and every other compound carrying a non-ASCII letter was invisible and the rule quietly did nothing outside English. It counts Unicode letters now. Measured after the change across both corpora: the highest rate in any file is 1.4 per 100 words against a threshold of 3, so nothing new fires.
+
+`dash` also counted the Chinese 破折号, which is written as two em dashes, as two findings. A run of em dashes is one mark.
+
+
 `Intl.Segmenter` existing is not the same as ICU carrying the word dictionaries it needs. A Node built with small ICU constructs the segmenter and then hands back a whole run of Japanese, Chinese, Thai, Khmer, Lao, Burmese or Tibetan as a single segment, which is the "a three-thousand-character document counts as one word" bug again, this time with no symptom: the document would grade F whatever it said. The segmenter's answer is now checked per run instead of trusted, and a run of twelve characters or more that comes back as one word falls to the two-characters-per-word estimate. Per run, so a build carrying the dictionary for one of these scripts and not another gets the right treatment for each. Nothing changes on a full-ICU build, which is what CI and the published binaries use.
 
 Both READMEs gain a section on where a finding points: the column is a 1-based UTF-16 offset in logical order, which is what editors, GitHub annotations and language servers use, and for a reader of Arabic or Hebrew that is not the position the eye sees. The finding's `excerpt` is the part meant for reading; the column is for the tool that jumps to it.

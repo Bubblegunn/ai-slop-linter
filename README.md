@@ -195,6 +195,46 @@ To silence a finding you have judged wrong:
 <!-- slop-ignore vague-source, triad -->    (from here to the end of the file)
 ```
 
+## If you do not write in English
+
+Every rule here was written against English prose and measured on English prose, so before
+this went out the rules were run against correct published typography in thirteen languages:
+Conan Doyle in Polish, Jókai in Hungarian, Chekhov in Russian, Dumas in French, and nine more,
+each punctuated exactly as its language requires. The table is
+[`bench/TYPOGRAPHY.md`](bench/TYPOGRAPHY.md), the corpus and its licences are in
+`bench/typography`, and the argument is in
+[`docs/typography-across-languages.md`](docs/typography-across-languages.md).
+
+One rule failed, and it failed badly. `dash` carries the highest severity this tool has, and
+it fires at these rates per 1,000 words on correct native prose:
+
+| Polish | Hungarian | Russian | French | German | English, human baseline |
+|---:|---:|---:|---:|---:|---:|
+| 73.5 | 52.1 | 24.0 | 22.0 | 6.7 | 1.0 |
+
+The Polish, Hungarian and Russian files grade F for punctuating their own language correctly.
+The em dash is ordinary in French, opens dialogue in Spanish, and in Russian stands where the
+verb "to be" would go, so it is grammar there rather than decoration.
+
+So tell the tool what you write in:
+
+```json
+{ "language": "fr" }
+```
+
+or `--language fr` for one run. English is the default, so nothing changes for a repository
+that does not set it. When the language is not English, `dash` does not run, and the output
+says so rather than going quietly clean. Nothing else stands down, because nothing else was
+measured to need it.
+
+Two things this cannot claim. Fifteen of the rules are built from English words, so outside
+English they are not unfair, they are inert: a French README written entirely by a model
+passes all of them, because `in order to` is not a French phrase. And a density threshold
+does not rescue `dash`: correct German prose sits at 6.7 findings per 1,000 words and the
+machine corpus in [`bench/PRECISION.md`](bench/PRECISION.md) sits at 5.7, so the two
+distributions overlap and no global number separates a German writer from a model. That was
+measured before it was given up on.
+
 ## Configuration
 
 `slop --init` writes a `.slop.json` to start from, `slop --init action` adds the pull request

@@ -22,13 +22,22 @@ export const dashes: Rule = {
   },
   ignoreWhen:
     "You are quoting a source that uses dashes, or the dash is your own long-standing habit and the rest of the repository agrees with it.",
+  // Measured, not assumed. Against correct published prose in thirteen languages this rule
+  // fires 73.5 times per 1,000 words on Polish, 52.1 on Hungarian, 24.0 on Russian and 22.0
+  // on French, against 1.0 on the English human baseline, because the dash is ordinary
+  // punctuation there and in Russian it stands in for the verb. bench/TYPOGRAPHY.md has the
+  // table and docs/typography-across-languages.md has the argument, including why a density
+  // threshold cannot separate correct German prose from the machine corpus.
+  englishOnly: true,
   check(doc: Doc): Finding[] {
     const em = scan(
       doc,
       dashes,
       // The spaced-hyphen branch must not match a Markdown list marker. A nested item
       // ("  - two") is a hyphen preceded only by indentation, which is a bullet, not a dash.
-      /[ \t]*(?:—|–(?!\d)|(?<=\s)--(?=\s)|(?<!^[ \t]*) - )[ \t]*/gm,
+      // A run of em dashes is one mark, not one finding per character: the Chinese 破折号 is
+      // written as two em dashes and was reported twice.
+      /[ \t]*(?:—+|–(?!\d)|(?<=\s)--(?=\s)|(?<!^[ \t]*) - )[ \t]*/gm,
       (m) => (m[0].includes("—") ? "em dash" : m[0].trim() === "--" ? "double hyphen used as a dash" : m[0].includes("–") ? "en dash used as a dash" : "spaced hyphen used as a dash"),
       (m) => fixFor(doc, m),
     );

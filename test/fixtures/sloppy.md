@@ -15,7 +15,7 @@ The tool is robust, seamless, and vibrant, showcasing a truly world-class experi
 
 The real question is whether teams can adapt. At its core, what really matters is readiness. In order to achieve this, we need to be careful, thoughtful, and mindful. Due to the fact that it is important to note that things change, stay tuned.
 
-“Curly quotes” and it’s apostrophes appear here. As of my last update, I hope this helps! Let me know if you need anything else.
+The flag is "--fix" and it's safe. “Curly quotes” and it’s apostrophes appear here. As of my last update, I hope this helps! Let me know if you need anything else.
 
 ## Challenges and Future Outlook
 

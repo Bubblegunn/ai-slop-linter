@@ -49,6 +49,12 @@ export interface Rule {
   example: { before: string; after: string };
   /** The case where a maintainer should switch this rule off rather than obey it. */
   ignoreWhen: string;
+  /**
+   * True for a rule whose evidence is English and whose pattern is ordinary writing
+   * elsewhere, so it stands down when a repository declares it writes in another language.
+   * Set only where that was measured: see `bench/TYPOGRAPHY.md`.
+   */
+  englishOnly?: boolean;
   check(doc: Doc): Finding[];
 }
 

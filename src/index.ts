@@ -95,6 +95,14 @@ export interface LintOptions {
   /** Language packs to switch on, by tag. English is always on. */
   languages?: readonly string[];
   /**
+   * The language this document's prose is written in, as a BCP 47 tag. Defaults to English,
+   * which is the behaviour every existing repository has. When it is anything else, rules
+   * marked `englishOnly` stand down, because their evidence is English and their pattern is
+   * ordinary writing elsewhere. This is configuration rather than detection on purpose: a
+   * guess made on a README with English headings over French prose is wrong either way.
+   */
+  language?: string;
+  /**
    * Words below which the document is not graded. Defaults to GRADE_FLOOR. A caller that
    * only ever sees short text, the commit-message paths, passes 0, because there the
    * question is whether a message carries a tell, not how dense the tells are.
@@ -109,10 +117,18 @@ export interface LintOptions {
  */
 export const GRADE_FLOOR = 50;
 
+/** True for the default and for every English tag, "en", "en-GB", "en_US". */
+export const isEnglish = (tag: string | undefined): boolean => !tag || tag.toLowerCase().split(/[-_]/)[0] === "en";
+
 export interface LintResult {
   path: string;
   words: number;
   findings: Finding[];
+  /**
+   * Rules that did not run because the declared language is not English. Reported so that a
+   * quiet result is never mistaken for a clean one.
+   */
+  stoodDown: string[];
   /** Weighted findings per 1,000 words, or null when the document is under GRADE_FLOOR words. */
   score: number | null;
   /** Null when the document is too short to grade; the findings still stand. */
@@ -133,10 +149,16 @@ export function lintText(path: string, text: string, options: LintOptions = {}):
 export function lintDoc(doc: Doc, options: LintOptions = {}): LintResult {
   const ignore = new Set(options.ignore ?? []);
   const only = options.only?.length ? new Set(options.only) : undefined;
+  const english = isEnglish(options.language);
   const findings: Finding[] = [];
+  const stoodDown: string[] = [];
   for (const rule of rulesFor(options.languages)) {
     if (only && !only.has(rule.id)) continue;
     if (ignore.has(rule.id)) continue;
+    if (rule.englishOnly && !english) {
+      stoodDown.push(rule.id);
+      continue;
+    }
     for (const f of rule.check(doc)) if (!suppressed(doc, f)) findings.push(f);
   }
   findings.sort((a, b) => a.line - b.line || a.column - b.column);
@@ -146,7 +168,7 @@ export function lintDoc(doc: Doc, options: LintOptions = {}): LintResult {
   const denominator = Math.max(doc.words, GRADE_FLOOR) / 1000;
   const floor = options.floor ?? GRADE_FLOOR;
   const score = doc.words < floor ? null : Math.round((weighted / denominator) * 10) / 10;
-  return { path: doc.path, words: doc.words, findings, score, grade: score === null ? null : gradeFor(score), errors: findings.filter((f) => f.severity === "error").length };
+  return { path: doc.path, words: doc.words, findings, stoodDown, score, grade: score === null ? null : gradeFor(score), errors: findings.filter((f) => f.severity === "error").length };
 }
 
 /** Apply every safe fix once. Overlapping fixes keep the earlier one. */

@@ -26,6 +26,8 @@ wrote it; it shows the tells, with line numbers, and fixes the safe ones.
   --format <f>          text (default), json, github (workflow annotations) or markdown (a table to paste)
   --ignore <rule,...>   skip rules by id (--skip is the same flag)
   --only <rule,...>     run only these rules
+  --language <tag>      the language this repository's prose is written in (default en);
+                        rules whose evidence is English stand down when it is not
   --languages <tag,...> rule packs to switch on besides English
   --max-score <n>       fail when a file's score is above n (default from .slop.json, else 10)
   --warn                never exit 1; report only
@@ -54,6 +56,7 @@ interface Options {
   ignore: string[];
   only: string[];
   languages: string[];
+  language?: string;
   maxScore: number | undefined;
   warn: boolean;
   baseline: boolean;
@@ -88,6 +91,7 @@ export function parse(argv: string[]): Options {
       o.format = f;
     } else if (a === "--ignore" || a === "--skip") o.ignore.push(...next().split(",").map((s) => s.trim()).filter(Boolean));
     else if (a === "--only") o.only.push(...next().split(",").map((s) => s.trim()).filter(Boolean));
+    else if (a === "--language") o.language = next();
     else if (a === "--languages") o.languages.push(...next().split(",").map((s) => s.trim()).filter(Boolean));
     else if (a === "--max-score") o.maxScore = Number(next());
     else if (a === "--warn") o.warn = true;
@@ -136,6 +140,12 @@ interface Config extends Rules {
   include?: string[];
   /** Language rule packs to switch on besides English. */
   languages?: string[];
+  /**
+   * The language this repository's prose is written in, a BCP 47 tag, default "en". Not the
+   * same as `languages`, which switches extra rule packs on: this one says what the text is,
+   * and rules whose evidence is English stand down when it is not English.
+   */
+  language?: string;
   baseline?: string;
   /** Applied in order to a file that matches; a later entry wins over an earlier one. */
   overrides?: Override[];
@@ -225,6 +235,9 @@ function renderText(results: (LintResult & { baselined?: number })[], fixed: Map
     );
     for (const f of r.findings) out.push(`  ${String(f.line).padStart(4)}:${String(f.column).padEnd(3)} ${f.severity.padEnd(7)} ${f.rule.padEnd(20)} ${f.message}`);
   }
+  // A rule that did not run is said out loud, so a quiet result is never read as a clean one.
+  const stoodDown = [...new Set(results.flatMap((r) => r.stoodDown))].sort();
+  if (stoodDown.length) out.push(`${stoodDown.join(", ")} did not run: the declared language is not English.`);
   return out.join("\n");
 }
 
@@ -293,6 +306,7 @@ export function renderMarkdown(results: LintResult[], maxScore: number): string 
 
 const CONFIG = `{
   "include": ["**/*.md"],
+  "language": "en",
   "maxScore": 10,
   "overrides": [
     { "files": ["CHANGELOG.md"], "ignore": ["bold-label"] }
@@ -427,7 +441,8 @@ async function main() {
     // question is whether the text carries a tell, not how dense the tells are.
     const short = input.file === null && input.name !== "stdin";
     const languages = o.languages.length ? o.languages : (config.languages ?? []);
-    const opts = { ignore: [...per.ignore, ...o.ignore], only: o.only.length ? o.only : per.only, languages, ...(short ? { floor: 0 } : {}) };
+    const language = o.language ?? config.language;
+    const opts = { ignore: [...per.ignore, ...o.ignore], only: o.only.length ? o.only : per.only, languages, ...(language ? { language } : {}), ...(short ? { floor: 0 } : {}) };
     limits.set(display, o.maxScore ?? per.maxScore ?? 10);
     if (o.fix && input.file) {
       const r = fixText(display, input.text, opts);

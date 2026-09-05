@@ -101,10 +101,12 @@ ASCII, so it cannot match `peut-être` or any other hyphenated compound containi
 outside the English alphabet. It did not fire on any file here, English included. It is not
 penalising anyone; it is quietly not working outside ASCII.
 
-## What the fix would be
+## What the fix was
 
-Nothing here is implemented. This is a measurement, and the changes it argues for belong in
-their own change with their own tests.
+This document was written as a measurement, with nothing implemented. All three changes it
+argues for shipped in 0.1.4, with their own tests, and the sections below keep the reasoning
+that chose them. `bench/TYPOGRAPHY.md` still measures every rule with no language declared,
+because the table is about what the rules do, not about what a configured repository sees.
 
 ### `dash`
 
@@ -133,10 +135,13 @@ repository declares that it writes in something else, `dash` is off, because out
 this tool has no evidence that a dash means anything, and the evidence it does have says the
 dash is ordinary there.
 
-This third option is the one to take. It fixes Polish, Hungarian, Russian, French, Dutch,
+This third option is the one that shipped. It fixes Polish, Hungarian, Russian, French, Dutch,
 Spanish, Portuguese, Turkish, Finnish and German at once without naming any of them in a rule,
 it does not silently change what any existing repository sees, and it puts the claim where it
 can be defended: this rule is a house rule for English text in a repository, and it says so.
+`"language": "fr"` in `.slop.json`, or `--language fr`, and the rule stands down; the run says
+`dash did not run: the declared language is not English`, so a quiet result is never read as a
+clean one. In the source it is one field, `englishOnly`, carried by `dash` alone.
 
 The honest cost is that a machine-written French README would no longer be flagged for its
 dashes. That is the right trade. The alternative charges a French writer an error-severity
@@ -144,9 +149,12 @@ finding every few sentences for punctuating French correctly, which is precisely
 Liang et al. describe, and this tool would rather miss a model than mark a person.
 
 One smaller change is independent of all of this and is right either way. Where `dash` stays
-on, it should count the Chinese 破折号 as the single mark it is instead of two findings, and it
-should recognise the dash forms that Chinese editions actually use. A rule that fires twice for
-one dash is wrong about the text whatever the policy is.
+on, it should count the Chinese 破折号 as the single mark it is instead of two findings. A rule
+that fires twice for one dash is wrong about the text whatever the policy is. The pattern now
+matches a run of em dashes as one mark. The other half, recognising the dash forms particular
+Chinese editions use, is not done: the box-drawing character this edition sets its 破折号 with
+is still invisible to the rule, and with `dash` off for a repository that declares Chinese,
+nothing was gained by teaching it more marks to fire on.
 
 ### `curly-quotes`
 
@@ -160,17 +168,22 @@ That keeps the behaviour the rule was written for, which is text pasted out of a
 substituted smart quotes into a file that otherwise uses straight ones, and it stops the rule
 from reading correct Chinese as a paste artifact.
 
-This is the option to take because it needs no configuration and no language detection. It is
-the rule's existing idea, applied more carefully.
+This is the option that shipped, because it needs no configuration and no language detection.
+It is the rule's existing idea, applied more carefully. The Chinese file went from 34 findings
+to none, and the English corpus in `bench/PRECISION.md` did not move. The honest cost is that a
+file whose only straight mark is an apostrophe no longer has its curly double quotes reported:
+within-family mixture is the evidence, and across-family mixture is not.
 
 ### `hyphen-density`
 
 Replace the ASCII character class with a Unicode letter class so the rule means the same thing
-in every alphabet. This should be measured before it is trusted, because languages that hyphenate
+in every alphabet. This was measured before it was trusted, because languages that hyphenate
 freely may cross the threshold for reasons that have nothing to do with a model reaching for
-adjectives, and this corpus cannot answer that question: the rule reports nothing until it
-crosses the threshold, so a corpus of files that never cross it says only that they never
-crossed it.
+adjectives. After the change, every file in `bench/corpus` and `bench/typography` was counted
+again: the highest rate in any of them is 1.4 hyphenated compounds per 100 words, in a Python
+Enhancement Proposal, against a threshold of 3. The Russian file rose from 0 to 0.9 and the
+Spanish from 0 to 0.1, and nothing fired. That is what one text per language can support, and
+it is not the same as knowing how a language that hyphenates freely behaves at length.
 
 ## What this cannot support
 

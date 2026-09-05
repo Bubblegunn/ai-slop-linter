@@ -38,21 +38,20 @@ author, its date, its source and its licence.
 | Portuguese | 1 | 1216 | 0 | 0 |
 | Russian | 1 | 1084 | 26 | 24 |
 | Turkish | 1 | 561 | 5 | 8.9 |
-| Chinese | 1 | 1564 | 34 | 21.7 |
+| Chinese | 1 | 1564 | 0 | 0 |
 
 ## Per rule, per language
 
 Findings per 1,000 words. Only the rules that fire somewhere have a column here; the
-16 that fire nowhere in this corpus are listed below the table.
+17 that fire nowhere in this corpus are listed below the table.
 
 | rule | severity | German | English | Spanish | Finnish | French | Hungarian | Italian | Japanese | Dutch | Polish | Portuguese | Russian | Turkish | Chinese |
 |---|---|---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---:|
 | `dash` | error | 6.7 | 1 | 0 | 8.2 | 0 | 52.1 | 0 | 0 | 0 | 73.5 | 0 | 24 | 8.9 | 0 |
 | `not-x-but-y` | warning | 0 | 0.2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | `ai-vocabulary` | warning | 0 | 0.2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| `curly-quotes` | info | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 21.7 |
 
-Silent on every language in this corpus: `chatbot`, `cutoff-disclaimer`, `triad`, `reveal`, `ing-tail`, `inflated`, `sales`, `vague-source`, `announcing`, `closer`, `bold-label`, `emoji`, `filler`, `title-case-heading`, `challenges-section`, `hyphen-density`.
+Silent on every language in this corpus: `chatbot`, `cutoff-disclaimer`, `triad`, `reveal`, `ing-tail`, `inflated`, `sales`, `vague-source`, `announcing`, `closer`, `bold-label`, `emoji`, `filler`, `curly-quotes`, `title-case-heading`, `challenges-section`, `hyphen-density`.
 A rule that fires nowhere here is not thereby safe; it means this corpus does not
 exercise it. These files are continuous prose, so the rules that need a heading, a bold
 label, a list marker or an emoji have nothing to match, whatever language they are in.
@@ -78,7 +77,7 @@ label, a list marker or an emoji have nothing to match, whatever language they a
 | `typography/pt-eca-de-queiros-ramires.md` | 1216 | A | 0 | 0 |
 | `typography/ru-chekhov-dama-s-sobachkoy.md` | 1084 | F | 72 | 26 |
 | `typography/tr-omer-seyfettin-kasagi.md` | 561 | D | 26.7 | 5 |
-| `typography/zh-song-ling-li-ji-guang.md` | 1564 | B | 6.5 | 34 |
+| `typography/zh-song-ling-li-ji-guang.md` | 1564 | A | 0 | 0 |
 
 ## What the transcription hides
 
@@ -124,7 +123,6 @@ that produced it.
 | Polish | `dash` | …. Nie spostrzegł ich, ale ja dostrzegłem -- zupełnie świeże, w pobliżu. |
 | Russian | `dash` | — Он не кусается, — сказала она и покраснела. |
 | Turkish | `dash` | — Ben de yapacağım! diye tuttururdum. |
-| Chinese | `curly-quotes` | …顶跳下。此处教会传道人未重生，长老、执事中抽烟俗世。如得二百名慕道友，谁培养之？“本”已坏而务“末”，一遇磨难，牧师、执事先逃命，亦可悲矣！（４）在哈尔滨，按步工… |
 
 ## Sources
 
