@@ -153,6 +153,18 @@ curl -fsSL https://raw.githubusercontent.com/Bubblegunn/ai-slop-linter/main/scri
 Skip it once with `git commit --no-verify`. The hook reads the message file git hands
 it; `npx ai-slop-linter --commit-msg "$1"` is all it does.
 
+If commitlint already guards your messages, add the rule there instead of a second hook:
+
+```js
+// commitlint.config.js
+export default {
+  extends: ["@commitlint/config-conventional", "ai-slop-linter/commitlint/config"],
+};
+```
+
+That turns on `ai-slop-linter/tells` as an error; `[2, "always", { maxScore: 10, ignore: [] }]`
+is the full form if you want the threshold or the ignore list changed.
+
 **Pull request bodies from the shell.** `npx ai-slop-linter --pr 42` reads the body
 through `gh` and lints it like a file.
 

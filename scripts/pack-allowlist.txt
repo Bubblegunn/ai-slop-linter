@@ -21,5 +21,7 @@ dist/src/rules/residue.d.ts
 dist/src/rules/residue.js
 dist/src/rules/vocabulary.d.ts
 dist/src/rules/vocabulary.js
+integrations/commitlint/config.mjs
+integrations/commitlint/index.mjs
 package.json
 skills/ai-slop-linter/SKILL.md
