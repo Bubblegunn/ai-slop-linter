@@ -213,8 +213,8 @@ on this repository's own Markdown in CI with `maxScore` 3.
 ## Contributing
 
 Adding a rule is one function, one fixture sentence and one table row; see
-[CONTRIBUTING.md](CONTRIBUTING.md). Zero runtime dependencies, Node 20 or newer, tests
-with `node:test`.
+[CONTRIBUTING.md](CONTRIBUTING.md), which also describes the one-command release. Zero runtime
+dependencies, Node 20 or newer, tests with `node:test`.
 
 ## Licence
 
