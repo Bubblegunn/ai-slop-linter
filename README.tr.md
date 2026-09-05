@@ -114,6 +114,13 @@ Bir kural sınıfta kaldı. `dash` bu araçtaki en yüksek şiddete sahip ve do�
 |---:|---:|---:|---:|---:|---:|
 | 73,5 | 52,1 | 24,0 | 22,0 | 6,7 | 1,0 |
 
+Lehçe, Macarca, Rusça ve Almanca sayıları, dosyaların olduğu gibi ölçülen hâli. Fransızca sayısı
+tek bir kayıt istiyor ve okurun kendi bulmasına bırakmıyoruz: o dosya bize uzun tireleri, ardından
+gelen kelimeye bitişik iki tire olarak yazılmış hâlde ulaşıyor, kural bunu eşleştirmiyor, yani
+olduğu gibi 0, basılı baskının kullandığı tireler geri konduğunda 22,0 çıkıyor. `bench/TYPOGRAPHY.md`
+iki sütunu da basıyor. Bugün bir Fransızca yazarın karşılaşacağı sayı geri konmuş olan, çünkü kimse
+BENİOKU dosyasına tireyi iki tire diye yazmıyor.
+
 Lehçe, Macarca ve Rusça dosyalar kendi dillerini doğru noktaladıkları için F alıyor. Uzun tire
 Fransızcada olağandır, İspanyolcada diyaloğu açar, Rusçada ise "olmak" fiilinin yerinde durur;
 yani orada süs değil dilbilgisidir.

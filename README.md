@@ -212,6 +212,13 @@ it fires at these rates per 1,000 words on correct native prose:
 |---:|---:|---:|---:|---:|---:|
 | 73.5 | 52.1 | 24.0 | 22.0 | 6.7 | 1.0 |
 
+Polish, Hungarian, Russian and German are what the committed files measure as they stand. The
+French figure needs one caveat, stated here rather than left for a reader to find: that file
+reaches us with its em dashes typed as two hyphens attached to the following word, which the
+rule does not match, so it scores 0 as transcribed and 22.0 once the dashes the printed edition
+set are restored. `bench/TYPOGRAPHY.md` prints both columns. The restored figure is the one a
+French writer would meet today, because nobody types a dash as two hyphens in a README.
+
 The Polish, Hungarian and Russian files grade F for punctuating their own language correctly.
 The em dash is ordinary in French, opens dialogue in Spanish, and in Russian stands where the
 verb "to be" would go, so it is grammar there rather than decoration.
@@ -499,7 +506,7 @@ word counts move as the documents grow, so the version and the date are part of 
 |---|---|---|---|
 | [proactive-gate](https://github.com/Bubblegunn/proactive-gate) README | 4,871 | A (0) | none |
 | [workproof](https://github.com/Bubblegunn/workproof) README | 4,121 | A (0) | none |
-| this README | 3,647 | A (0) | none |
+| this README | 3,744 | A (0) | none |
 | [surviving-lines](https://github.com/Bubblegunn/surviving-lines) README | 2,002 | A (0) | none; the first run found 2 bold labels in a list, fixed the same day |
 | [product-engineer](https://github.com/Bubblegunn/product-engineer) README | 1,755 | A (0) | none; the first run scored C (8.7) for 7 bold labels in the rule list |
 | 8 of 11 portfolio essays | 854 to 1,849 each | A (0) | none |
