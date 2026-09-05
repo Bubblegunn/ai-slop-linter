@@ -59,6 +59,22 @@ info 0.3), and a grade: A under 3, B under 8, C under 15, D under 30, F above. T
 exits 1 when any file has an error-severity finding or a score above `--max-score`
 (default 10), so it can sit in CI without a cleanup commit first.
 
+Scoring by density rather than by severity is the one design choice here with empirical
+support behind it, and it is worth saying where that support stops. Charoenwet,
+Thongtanunam, Pham and Treude compared ways of ordering static-analysis warnings
+([ISSTA 2024](https://arxiv.org/html/2407.12241v1)) and found warning density, warnings per
+line of code, gave the largest improvement, up to 5.6% on recall and 13.3% on initial false
+alarms, while warning severity, the ordering developers reach for first, gave the lowest
+improvement on every metric they measured. That study ranks warnings in changed functions
+during security code review; this tool ranks findings per thousand words of prose. The shape
+of the choice is the same and the evidence is from a different domain, so treat it as
+support for the shape and not as proof about this tool.
+
+The rest of the arithmetic has nothing behind it and should be read that way. The weights of
+three, one and three tenths are a convention. So are the grade boundaries. The fifty-word
+floor below which nothing is graded is arithmetic rather than a finding, and the reason for
+it is in the next section.
+
 ### How words are counted
 
 Scripts that put spaces between words are tokenised: a word keeps its accents, so
@@ -203,6 +219,20 @@ point (fixing a fixed file changes nothing) and leaves every other finding for y
 because `not just X but Y` needs a rewritten sentence, not a character swap.
 
 ## In a repository
+
+Commit messages and pull request descriptions are the writing this section is about, and
+they are a harder register to read than an article. They are short, often templated, and
+already the subject of a benchmark: Zhang, Liu, Di and Qian's
+[CodeFuse-CommitEval](https://arxiv.org/abs/2511.19875) asks six models to spot commit
+messages that contradict their diff, and reports average recall of 85.95% and precision of
+80.28% against specificity of 63.8%, so on consistent commits the models raised a false
+alarm about a third of the time. That number is the argument for staying rule-based here. A
+rule that fires on a phrase it can point at is wrong in ways a reader can check.
+
+Whether the tells this linter looks for survive into that register is an open question, and
+[RESEARCH.md](RESEARCH.md) is the harness for answering it, along with the two runs done so
+far and what they do not yet support.
+
 
 **Pull requests.** The Action lints the pull request title, its description and every
 changed Markdown file, annotates the lines on the files tab, and keeps one comment on the
