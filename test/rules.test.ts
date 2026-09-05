@@ -41,6 +41,19 @@ test("dash rule: fixes between words to a comma, drops after punctuation, leaves
   assert.equal(left[0]?.fix, undefined);
 });
 
+test("dash rule: a nested list marker is a bullet, not a dash", () => {
+  // An ordinary nested bullet list is a hyphen preceded only by indentation. Reading it as a
+  // spaced hyphen gave every README with a nested list three errors and an F, which is the
+  // complaint a launch thread would have led with.
+  const nested = "- top level\n  - two space nested\n    - four space nested\n\n1. ordered\n   - nested under ordered\n\n* star\n  * star nested\n";
+  const dashes = lintText("n.md", nested).findings.filter((f) => f.rule === "dash");
+  assert.deepEqual(dashes, [], JSON.stringify(dashes));
+
+  // A hyphen with words on both sides is still the tell the rule exists for.
+  const prose = lintText("p.md", "Rates rose - sharply - in May.\n").findings.filter((f) => f.rule === "dash");
+  assert.equal(prose.length, 2, JSON.stringify(prose));
+});
+
 test("fixes are idempotent: fixing twice equals fixing once", () => {
   const once = fixText("s.md", sloppy);
   const twice = fixText("s.md", once.text);

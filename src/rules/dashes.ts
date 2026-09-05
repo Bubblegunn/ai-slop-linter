@@ -26,7 +26,9 @@ export const dashes: Rule = {
     const em = scan(
       doc,
       dashes,
-      /[ \t]*(?:—|–(?!\d)|(?<=\s)--(?=\s)| - )[ \t]*/g,
+      // The spaced-hyphen branch must not match a Markdown list marker. A nested item
+      // ("  - two") is a hyphen preceded only by indentation, which is a bullet, not a dash.
+      /[ \t]*(?:—|–(?!\d)|(?<=\s)--(?=\s)|(?<!^[ \t]*) - )[ \t]*/gm,
       (m) => (m[0].includes("—") ? "em dash" : m[0].trim() === "--" ? "double hyphen used as a dash" : m[0].includes("–") ? "en dash used as a dash" : "spaced hyphen used as a dash"),
       (m) => fixFor(doc, m),
     );

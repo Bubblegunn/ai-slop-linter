@@ -2,6 +2,9 @@
 
 ## 0.1.0 (2026-09-05)
 
+
+A nested Markdown list no longer reads as a spaced hyphen. Indentation followed by a hyphen is a bullet, so a README with nested items took three errors and an F; the rule now refuses a hyphen preceded only by indentation, and the measured corpus is unchanged.
+
 A fenced block now closes on a file with CRLF line endings. The closing marker was matched with `[ \t]*$`, which a trailing carriage return fails, so on Windows a fence stayed open and masked the rest of the document. Caught by the Windows leg of CI on the fixture above, and pinned by a test that feeds the same fixture with CRLF endings.
 
 Masking covers four constructs it missed. Code quoted by four-space or tab indentation, which is how a README shows a diff, was linted as prose, so a diff line beginning `-  ` was reported as a spaced-hyphen dash. A fenced block inside a blockquote was not recognised as a fence. The contents of HTML `pre` and `code` blocks were visible to the rules. Front matter was matched only in its YAML form, so a TOML header was linted. Content indented under a list item stays visible on purpose, because list continuation is prose more often than it is code. Fixture: `test/fixtures/quoted-code.md`.
