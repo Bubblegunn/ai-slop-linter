@@ -80,6 +80,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run build
       - run: node bench/precision.mjs --check
+      - run: node bench/typography.mjs --check
   ci-ok:
     # The one check the branch ruleset requires; it fails if any job above failed or was cancelled.
     if: always()
