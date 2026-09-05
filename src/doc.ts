@@ -85,8 +85,11 @@ function delimited(s: string, open: string, close: string, stop?: RegExp, opener
 }
 
 
-/** A line with its blockquote markers removed, so a fence inside a quote is still a fence. */
-const unquote = (line: string) => line.replace(/^(?: {0,3}>\s?)+/, "");
+/**
+ * A line with its blockquote markers and any carriage return removed, so a fence
+ * inside a quote is still a fence and a file with CRLF endings closes its blocks.
+ */
+const unquote = (line: string) => line.replace(/\r$/, "").replace(/^(?: {0,3}>\s?)+/, "");
 
 /**
  * Fenced blocks, line by line rather than by regex, so that a fence carrying a
@@ -119,6 +122,7 @@ function fencedSpans(lines: string[], lineStarts: number[]): Array<[number, numb
  */
 function indentedSpans(lines: string[], lineStarts: number[]): Array<[number, number]> {
   const indented = (l: string) => /^(?: {4}|\t)/.test(l) && l.trim() !== "";
+  // `trim` already drops a trailing carriage return, so CRLF files need nothing more here.
   const blank = (l: string) => l.trim() === "";
   const out: Array<[number, number]> = [];
   let inList = false;

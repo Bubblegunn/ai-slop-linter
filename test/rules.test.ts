@@ -171,3 +171,14 @@ test("code quoted by indentation, inside a blockquote or in an HTML block is mas
   const proseLine = lines.findIndex((l) => l.startsWith("Prose outside every block")) + 1;
   assert.ok(r.findings.some((f) => f.rule === "dash" && f.line === proseLine), "masking swallowed prose outside the blocks");
 });
+
+test("masking survives CRLF line endings, which is how the fixture arrives on Windows", () => {
+  const crlf = fixture("quoted-code.md").replace(/\r?\n/g, "\r\n");
+  const r = lintText("quoted-code.md", crlf);
+  const lines = crlf.split("\r\n");
+  const proseLine = lines.findIndex((l) => l.startsWith("Prose outside every block")) + 1;
+  assert.ok(r.findings.some((f) => f.rule === "dash" && f.line === proseLine), "a fence failed to close on CRLF and swallowed the rest");
+  for (const f of r.findings) {
+    assert.ok(!/^(?: {4}|\t|>|<pre)/.test(lines[f.line - 1] ?? ""), `${f.rule} fired inside quoted code at line ${f.line}`);
+  }
+});
