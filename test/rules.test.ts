@@ -53,6 +53,23 @@ test("fixes are idempotent: fixing twice equals fixing once", () => {
   assert.ok(/\bto achieve this\b/i.test(once.text) && !/in order to/i.test(once.text));
 });
 
+test("curly quotes: a consistently typographic document is left alone, a mixed one is flagged", () => {
+  // Nineteenth-century prose and anything typeset properly uses curly marks throughout.
+  const typographic = "\u201CI am not afraid,\u201D she said. \u201CIt\u2019s the waiting that tires me.\u201D";
+  assert.equal(lintText("book.md", typographic).findings.filter((f) => f.rule === "curly-quotes").length, 0);
+  // A repository file that otherwise uses straight marks: the curly ones were pasted in.
+  const mixed = "The flag is \"--fix\" and it's safe. The model said \u201Cthis is fine\u201D about it.";
+  const found = lintText("README.md", mixed).findings.filter((f) => f.rule === "curly-quotes");
+  assert.equal(found.length, 2, JSON.stringify(found));
+});
+
+test("not-x-but-y catches the contracted forms, which are the common ones", () => {
+  assert.ok(idsIn("DataFlow isn't just another library, it's a paradigm shift.").has("not-x-but-y"));
+  assert.ok(idsIn("This doesn't just save time, but it changes the workflow.").has("not-x-but-y"));
+  assert.ok(idsIn("The change wasn't only about speed, it was about clarity.").has("not-x-but-y"));
+  assert.ok(!idsIn("The build isn't green yet.").has("not-x-but-y"));
+});
+
 test("not-x-but-y catches the three shapes and leaves plain contrast alone", () => {
   assert.ok(idsIn("It's not just a tool, but a habit.").has("not-x-but-y"));
   assert.ok(idsIn("It's not a manual. It's a promise.").has("not-x-but-y"));

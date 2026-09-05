@@ -9,7 +9,7 @@ export const notXButY: Rule = {
   source: "Wikipedia, Signs of AI writing: Negative parallelisms",
   check(doc) {
     return [
-      ...scan(doc, notXButY, /\bnot (?:just|only|merely|simply|about) [^.;\n]{2,80}?\b(?:but|it'?s|it is)\b/gi, () => "\"not just X but Y\": say the thing itself"),
+      ...scan(doc, notXButY, /(?:\bnot|n['’]t) (?:just|only|merely|simply|about) [^.;\n]{2,80}?\b(?:but|it'?s|it is|it was|that'?s|they'?re)\b/gi, () => "\"not just X but Y\": say the thing itself"),
       ...scan(doc, notXButY, /\b(?:it|this|that)(?:'s| is) not (?:a|an|the|about)? ?[^.;\n]{2,60}?[.;] (?:it|this|that)(?:'s| is)\b/gi, () => "\"It's not X. It's Y.\": state Y directly"),
       ...scan(doc, notXButY, /\bnot because [^.;\n]{2,80}?,? (?:but )?because\b/gi, () => "\"not because A, because B\": give the reason once"),
     ];

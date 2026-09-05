@@ -56,7 +56,11 @@ export const curlyQuotes: Rule = {
   severity: "info",
   source: "Wikipedia, Signs of AI writing: Curly quotation marks",
   check(doc) {
-    return scan(doc, curlyQuotes, /[“”‘’]/g, (m) => `curly ${/[“”]/.test(m[0]) ? "quote" : "apostrophe"}; straight marks match the rest of the repository`, (m) => (/[“”]/.test(m[0]) ? '"' : "'"));
+    // A document that never uses a straight mark chose its typography; flagging it
+    // would report every line of a typeset book. The tell is the mixture, which is
+    // what pasting from an interface that substitutes smart quotes leaves behind.
+    if (!/["']/.test(doc.masked)) return [];
+    return scan(doc, curlyQuotes, /[\u201C\u201D\u2018\u2019]/g, (m) => `curly ${/[\u201C\u201D]/.test(m[0]!) ? "quote" : "apostrophe"} among straight ones; the file mixes both`, (m) => (/[\u201C\u201D]/.test(m[0]!) ? '"' : "'"));
   },
 };
 

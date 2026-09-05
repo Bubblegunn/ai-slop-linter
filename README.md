@@ -232,6 +232,34 @@ f.text;               // fixed text
 f.applied;            // number of fixes
 ```
 
+## Measured on a fixed corpus
+
+A linter that cries wolf gets uninstalled, so the cost of a false alarm is measured and
+committed rather than asserted. `bench/corpus` holds ten texts: five written before any
+language model existed, three of them literary and scientific prose from the 1840s to 1860s
+and two Python Enhancement Proposals from 2001, and five pieces of unedited model output in
+the shapes this tool is pointed at. `npm run bench` runs every rule over both and writes
+[`bench/PRECISION.md`](bench/PRECISION.md), which lists the rate per rule, per 1,000 words, in
+each corpus. CI fails when the committed table no longer matches a fresh run.
+
+| corpus | words | grades |
+|---|---:|---|
+| human, all pre-2021 | 5,929 | A, A, B, B, B |
+| unedited model output | 1,045 | F, F, F, F, F |
+
+The first run found a rule that was wrong. `curly-quotes` flagged 92 lines of *Pride and
+Prejudice*, which is all of Austen's dialogue, and nothing at all in the model corpus. Curly
+marks are typography. What carries information is a file that mixes them with straight ones,
+which is what pasting out of a chat interface leaves behind. The rule now stays quiet unless a
+file mixes both, and Austen grades A.
+
+Eight findings remain on the human corpus and the table names every one. Six are real dashes
+in Darwin and Douglass and `--` in a 2001 style guide. One is `not just X but Y`, written by
+Frederick Douglass in 1845. One is `it's worth noting`, written by Guido van Rossum in PEP 8.
+None of them is a bug. They are the listed tells appearing in writing nobody would call slop,
+which is the standing cost of leaving those rules switched on, and it is the reason the output
+is a line number and a reason rather than a verdict about a person.
+
 ## Run on our own writing
 
 The tool on the four READMEs its author maintains and on the eleven essays on the author's site,
@@ -255,6 +283,12 @@ on this repository's own Markdown in CI with `maxScore` 3.
 
 ## What it cannot show
 
+- A probability. The tool does not compute one, deliberately. Detectors that score text
+  statistically misclassify people whose English is a second language: seven commercial
+  detectors marked 61% of TOEFL essays written by human candidates as machine-written, while
+  grading US eighth-grade essays almost perfectly
+  ([Liang et al., *Patterns*, 2023](https://doi.org/10.1016/j.patter.2023.100779)). A named
+  phrase on a numbered line can be disagreed with. A score cannot.
 - Authorship. A person who writes `delve` gets the same finding as a model. Passing
   says the tells are absent; it says nothing about who typed.
 - Meaning. It cannot tell a hollow paragraph from a good one when the hollow one

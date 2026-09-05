@@ -58,10 +58,10 @@ test("--fix rewrites the file and reports what it applied", async () => {
   const dir = await mkdtemp(join(tmpdir(), "slop-"));
   try {
     const file = join(dir, "doc.md");
-    await writeFile(file, "In order to help — we tried “this”.\n");
+    await writeFile(file, "In order to help — we tried “this”, it's fine.\n");
     const r = run(["doc.md", "--fix", "--warn"], { cwd: dir });
     assert.match(r.out, /4 fixed/);
-    assert.equal(await readFile(file, "utf8"), 'To help, we tried "this".\n');
+    assert.equal(await readFile(file, "utf8"), 'To help, we tried "this", it\'s fine.\n');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
