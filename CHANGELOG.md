@@ -2,6 +2,7 @@
 
 ## 0.1.0 (unreleased)
 
+<!-- slop-ignore-next-line filler -->
 `filler` no longer matches "in order to" when a determiner follows it. "Overrides are applied in order to any file" is "in order" plus "to", not the padded infinitive; the tool found this on its own README.
 
 `.slop.json` takes `overrides`: a list of `{ files, ignore, only, maxScore }` entries applied in order to any path that matches, so published docs can be held to a stricter score than a changelog. `--only` runs the named rules and nothing else, `--skip` is another spelling of `--ignore`, and both reject an unknown rule id instead of doing nothing.
