@@ -9,6 +9,8 @@ dist/src/doc.d.ts
 dist/src/doc.js
 dist/src/glob.d.ts
 dist/src/glob.js
+dist/src/history.d.ts
+dist/src/history.js
 dist/src/index.d.ts
 dist/src/index.js
 dist/src/rules/constructions.d.ts

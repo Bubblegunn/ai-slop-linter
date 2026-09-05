@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
+import { history, renderHistory, configuredIdentity, type Bucket } from "./history.js";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, resolve, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -13,6 +14,7 @@ const HELP = `usage: slop [options] [file|dir|glob|-]...
        slop --commit            lint the last commit message
        slop --commit-msg <file> lint the message being written (what a commit-msg hook receives)
        slop --pr <number>       lint a pull request description (needs gh)
+       slop --history           your own commit messages, read over time
        slop --rules             list the rules
        slop --explain <rule>    why one rule exists, with a before and after
        slop --init [action|hook] write .slop.json, and the workflow or the commit hook
@@ -30,6 +32,9 @@ wrote it; it shows the tells, with line numbers, and fixes the safe ones.
   --baseline            fail only on findings not listed in the baseline file
   --baseline-write      record the current findings as the baseline, then exit 0
   --baseline-file <f>   the baseline file (default .slop-baseline.json, or "baseline" in .slop.json)
+  --author <email,...>  --history: whose messages (default: this repository's user.email)
+  --by <period>         --history: month (default), quarter or year
+  --since <when>        --history: anything git log --since accepts
   --cwd <dir>           working directory (default: current)
   -h, --help            this text
   --version             print the version
@@ -58,10 +63,14 @@ interface Options {
   listRules: boolean;
   explain?: string;
   init?: string;
+  historyMode: boolean;
+  authors: string[];
+  bucket?: Bucket;
+  since?: string;
 }
 
 export function parse(argv: string[]): Options {
-  const o: Options = { targets: [], commit: false, fix: false, format: "text", ignore: [], only: [], languages: [], maxScore: undefined, warn: false, baseline: false, baselineWrite: false, cwd: process.cwd(), listRules: false };
+  const o: Options = { targets: [], commit: false, fix: false, format: "text", ignore: [], only: [], languages: [], maxScore: undefined, warn: false, baseline: false, baselineWrite: false, cwd: process.cwd(), listRules: false, historyMode: false, authors: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     const next = () => {
@@ -86,6 +95,13 @@ export function parse(argv: string[]): Options {
     else if (a === "--baseline-write") o.baselineWrite = true;
     else if (a === "--baseline-file") o.baselineFile = next();
     else if (a === "--cwd") o.cwd = resolve(next());
+    else if (a === "--history") o.historyMode = true;
+    else if (a === "--author") o.authors.push(...next().split(",").map((v) => v.trim()).filter(Boolean));
+    else if (a === "--by") {
+      const b = next();
+      if (b !== "month" && b !== "quarter" && b !== "year") throw new Error("--by must be month, quarter or year");
+      o.bucket = b;
+    } else if (a === "--since") o.since = next();
     else if (a === "--rules") o.listRules = true;
     else if (a === "--explain") o.explain = next();
     else if (a === "--init") {
@@ -362,6 +378,24 @@ async function main() {
       process.exit(2);
     }
     console.log(explain(rule));
+    return;
+  }
+  if (o.historyMode) {
+    // Default to the identity this repository would sign a commit with. Reading your own
+    // writing back is the point; naming someone else has to be a deliberate act.
+    const authors = o.authors.length ? o.authors : (() => { const me = configuredIdentity(o.cwd); return me ? [me] : []; })();
+    if (!o.authors.length && authors.length === 0) {
+      console.error("no git user.email is set here, so there is no \"your own\" to read.\nSet one, or name an address with --author.");
+      process.exit(2);
+    }
+    let h: ReturnType<typeof history>;
+    try {
+      h = history({ cwd: o.cwd, authors, ignore: o.ignore, only: o.only, languages: o.languages, ...(o.bucket ? { bucket: o.bucket } : {}), ...(o.since ? { since: o.since } : {}) });
+    } catch {
+      console.error("could not read git history here (is this a repository?)");
+      process.exit(2);
+    }
+    console.log(o.format === "json" ? JSON.stringify(h, null, 2) : renderHistory(h));
     return;
   }
   if (o.listRules) {

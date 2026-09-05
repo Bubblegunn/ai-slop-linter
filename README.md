@@ -294,6 +294,47 @@ header line and the finding lines under it:
 
 Run it with Tasks: Run Test Task. A test pins the output format to these patterns.
 
+## Your own writing, over time
+
+`--history` reads the commit messages you have written in a repository and reports the tells
+per 1,000 words, by month. It defaults to the address in that repository's git config, so
+what it shows you first is your own writing.
+
+```
+npx ai-slop-linter --history
+```
+
+A real run, on the repository behind my own site:
+
+```
+efegenc95@gmail.com · 133 messages · 17,502 words · by month
+
+period   messages  words  per 1,000  most common tell
+-------------------------------------------------------
+2026-07        52  9,884       26.6  dash (86), hyphen-density (15)
+                                   ██████████████████████
+2026-08        63  5,316       29.3  dash (51), hyphen-density (9)
+                                   ████████████████████████
+2026-09        18  2,302        1.8  hyphen-density (4), dash (1)
+                                   █
+```
+
+September is when I started running this on my own commit messages. That is the whole
+argument for the tool, and it is also the only claim this table can support: something
+changed in how those messages were written. It cannot tell you what changed it, and it
+cannot tell you who wrote anything.
+
+`--author a@b.c,d@e.f` reads other addresses, which you need if your own commits are split
+across several. `--by quarter` and `--by year` widen the period, `--since` narrows the
+range, and `--format json` gives you the periods to chart.
+
+**What this deliberately does not do.** There is no grade, no exit code and no per-person
+column, and pointing it at another person takes a deliberate flag. This tool's position is
+that it lists tells and never guesses who wrote the text, and a timeline is the shape most
+likely to be screenshotted as an accusation. A number that decides nothing is harder to
+point at someone. Trailers are not counted either, because a `Co-Authored-By` line is a
+template rather than prose.
+
 ## For agents
 
 Most of the tells above are written by coding agents, in the commit messages and pull
