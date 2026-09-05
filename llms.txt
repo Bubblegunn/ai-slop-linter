@@ -1,13 +1,14 @@
 # ai-slop-linter
 
-> A linter for the patterns that mark writing as machine-made: em dashes, "not X but Y", chatbot residue, sales words, and sixteen more. Line numbers, safe fixes, a GitHub Action, a commit-msg hook, and an agent skill. It does not guess who wrote the text. It shows the tells.
+> A linter for the patterns that mark writing as machine-made: em dashes, "not X but Y", chatbot residue, sales words, and sixteen more. Line numbers, safe fixes, a baseline for repositories with history, a GitHub Action with a sticky review comment, a commit-msg hook, a commitlint plugin, a VS Code problem matcher, and an agent skill. It does not guess who wrote the text. It shows the tells.
 
 Install: `npx ai-slop-linter file.md`. Licence: MIT. Repository: https://github.com/Bubblegunn/ai-slop-linter
 npm: https://www.npmjs.com/package/ai-slop-linter
 
 ## Docs
 
-- [README](README.md): 30 seconds, real output, the rule table with sources, CI, hook, skill, what it cannot show
+- [README](README.md): 30 seconds, real output, the rule table with sources, CI, baseline, hook, commitlint, editor, skill, what it cannot show
+- [commitlint plugin](integrations/commitlint/index.mjs): rule `ai-slop-linter/tells`; config at `ai-slop-linter/commitlint/config`
 - [Skill](skills/ai-slop-linter/SKILL.md): the rules in prose, for an agent that has no shell
 - [API](src/index.ts): lintText, fixText, rules, gradeFor, prepare
 - [Contributing](CONTRIBUTING.md): tests, adding a rule, severities, releasing
@@ -19,3 +20,5 @@ npm: https://www.npmjs.com/package/ai-slop-linter
 - The score is weighted findings per 1,000 words (error 3, warning 1, info 0.3). Grades: A under 3, B under 8, C under 15, D under 30, else F.
 - It is a linter, not a detector. A clean pass means the text has none of the listed tells, nothing more.
 - Fixes only swap characters or delete filler; nothing that changes meaning is auto-fixed.
+- `--format` is text, json, github (annotations plus an error line per failing text) or markdown (the table the Action posts as its one review comment).
+- A baseline (`--baseline-write`, `--baseline`) keys findings by file, rule and sentence, not line number; only findings outside it fail.

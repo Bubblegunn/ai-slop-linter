@@ -52,18 +52,27 @@ Yanlış bulduğunuz bir uyarıyı susturmak için:
 
 ## Depoda
 
-Pull request'lerde Action, açıklamayı ve değişen her Markdown dosyasını lint eder ve
-diff üzerine not düşer:
+Pull request'lerde Action, başlığı, açıklamayı ve değişen her Markdown dosyasını lint
+eder, diff üzerine satır satır not düşer ve pull request'in altında her push'ta
+güncellenen tek bir bulgu tablosu tutar (`pull-requests: write` ister; `comment: "false"`
+ile yalnızca notlar kalır):
 
 ```yaml
 - uses: Bubblegunn/ai-slop-linter@v0.1.0
 ```
+
+Geçmişi olan bir depoda `--baseline-write` bugünkü bulguları kaydeder, `--baseline` yalnızca
+yenilere takılır; önce temizlik commit'i gerekmez.
 
 Commit mesajları için bir `commit-msg` kancası:
 
 ```
 curl -fsSL https://raw.githubusercontent.com/Bubblegunn/ai-slop-linter/main/scripts/install-hook.sh | sh
 ```
+
+commitlint kullananlar için aynı kural bir eklenti olarak var:
+`extends: ["ai-slop-linter/commitlint/config"]`. VS Code'da `.vscode/tasks.json` içindeki
+görev, bulguları Sorunlar paneline ve metnin içine taşır.
 
 Ajanlar için skill, ajanın commit mesajını veya PR açıklamasını teslim etmeden önce
 kendi metnini lint etmesini sağlar:
