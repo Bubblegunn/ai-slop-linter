@@ -155,6 +155,15 @@ On the command line, `--only dash,chatbot` runs those rules and nothing else, `-
 silently doing nothing. Inside a file, `<!-- slop-ignore-next-line dash -->` covers one line
 and `<!-- slop-ignore dash, emoji -->` covers the rest of the file.
 
+## What the rules never see
+
+Before any rule runs, the document is blanked in the places code lives: front matter in YAML
+or TOML, fenced blocks including a fence inside a blockquote, code quoted by four-space or tab
+indentation, inline code, link targets, bare URLs, HTML tags and the contents of `pre` and
+`code`. A README that quotes a diff is the common case, and a diff line that starts with `-  `
+is not a dash finding. Content indented under a list item stays visible, because list
+continuation is prose more often than it is code.
+
 ## Fixes
 
 `--fix` only does what cannot change meaning: dashes become commas or full stops, curly
@@ -325,7 +334,7 @@ site, re-run on 5 September 2026 with the current rules (`npx ai-slop-linter <fi
 | [proactive-gate](https://github.com/Bubblegunn/proactive-gate) README | 2,578 | A (0) | none |
 | [surviving-lines](https://github.com/Bubblegunn/surviving-lines) README | 1,010 | A (0) | none; the first run found 2 bold labels in a list, fixed the same day |
 | [product-engineer](https://github.com/Bubblegunn/product-engineer) README | 894 | A (0) | none; the first run scored C (8.7) for 7 bold labels in the rule list |
-| this README | 1,855 | A (0) | none |
+| this README | 1,949 | A (0) | none |
 | 8 of 11 portfolio essays | 856 to 1,849 each | A (0) | none |
 | the other 3 essays | 871 to 1,601 | A (0.4 to 1.1) | `state-of-the-art` once, `elevated` once, `in order to` twice |
 

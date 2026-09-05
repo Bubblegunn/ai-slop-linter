@@ -155,3 +155,19 @@ test("filler: \"in order to\" is the padded infinitive, not \"in order\" followe
   assert.ok(!idsIn("Overrides are applied in order to any file whose path matches.").has("filler"));
   assert.ok(!idsIn("The steps run in order to the end of the list.").has("filler"));
 });
+
+test("code quoted by indentation, inside a blockquote or in an HTML block is masked", () => {
+  const text = fixture("quoted-code.md");
+  const r = lintText("quoted-code.md", text);
+  const lines = text.split("\n");
+  for (const f of r.findings) {
+    const line = lines[f.line - 1] ?? "";
+    assert.ok(
+      !/^(?: {4}|\t|>|<pre)/.test(line) && !/^title = /.test(line),
+      `${f.rule} fired inside quoted code at line ${f.line}: ${JSON.stringify(line)}`,
+    );
+  }
+  // Prose after the blocks is not code, and its spaced hyphen still counts.
+  const proseLine = lines.findIndex((l) => l.startsWith("Prose outside every block")) + 1;
+  assert.ok(r.findings.some((f) => f.rule === "dash" && f.line === proseLine), "masking swallowed prose outside the blocks");
+});

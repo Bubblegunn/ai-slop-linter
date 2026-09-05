@@ -2,6 +2,8 @@
 
 ## 0.1.0 (unreleased)
 
+Masking covers four constructs it missed. Code quoted by four-space or tab indentation, which is how a README shows a diff, was linted as prose, so a diff line beginning `-  ` was reported as a spaced-hyphen dash. A fenced block inside a blockquote was not recognised as a fence. The contents of HTML `pre` and `code` blocks were visible to the rules. Front matter was matched only in its YAML form, so a TOML header was linted. Content indented under a list item stays visible on purpose, because list continuation is prose more often than it is code. Fixture: `test/fixtures/quoted-code.md`.
+
 <!-- slop-ignore-next-line filler -->
 `filler` no longer matches "in order to" when a determiner follows it. "Overrides are applied in order to any file" is "in order" plus "to", not the padded infinitive; the tool found this on its own README.
 

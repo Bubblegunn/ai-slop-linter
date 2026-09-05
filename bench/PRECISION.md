@@ -19,6 +19,13 @@ introduction, a docs page and a set of commit messages.
 Every rule runs over both. The table reports findings per 1,000 words in each corpus and the
 ratio between them.
 
+What the rules never see: front matter (YAML or TOML), fenced code including a fence inside a
+blockquote, code quoted by four-space or tab indentation, inline code, link targets, bare URLs,
+HTML tags and the contents of `pre` and `code` blocks. All of it is blanked before any rule
+runs, so a dash in a diff a README quotes is not a finding. The exception is content indented
+under a list item, which stays visible because list continuation is prose more often than it is
+code.
+
 What these numbers are not: they are not detection accuracy, and no row says a text was
 machine-written. A rule that fires on the human corpus is not necessarily wrong: `in order to`
 is filler whoever typed it. The human rate measures how much noise a rule adds to writing that

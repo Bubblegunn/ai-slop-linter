@@ -84,6 +84,68 @@ function delimited(s: string, open: string, close: string, stop?: RegExp, opener
   return out;
 }
 
+
+/** A line with its blockquote markers removed, so a fence inside a quote is still a fence. */
+const unquote = (line: string) => line.replace(/^(?: {0,3}>\s?)+/, "");
+
+/**
+ * Fenced blocks, line by line rather than by regex, so that a fence carrying a
+ * blockquote prefix (`> \`\`\``) closes on its own marker like any other.
+ */
+function fencedSpans(lines: string[], lineStarts: number[]): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  for (let i = 0; i < lines.length; i++) {
+    const open = /^( {0,3})(`{3,}|~{3,})/.exec(unquote(lines[i]!));
+    if (!open) continue;
+    const marker = open[2]![0]!;
+    let end = lines.length - 1;
+    for (let j = i + 1; j < lines.length; j++) {
+      const close = new RegExp(`^ {0,3}${marker}{${open[2]!.length},}[ \t]*$`).test(unquote(lines[j]!));
+      if (close) {
+        end = j;
+        break;
+      }
+    }
+    out.push([lineStarts[i]!, lineStarts[end]! + lines[end]!.length]);
+    i = end;
+  }
+  return out;
+}
+
+/**
+ * Indented code blocks: four spaces or a tab, opened after a blank line, which is
+ * how a README quotes a diff. A run that continues a list is left alone, because
+ * list continuation is indented too and its text is prose the rules should read.
+ */
+function indentedSpans(lines: string[], lineStarts: number[]): Array<[number, number]> {
+  const indented = (l: string) => /^(?: {4}|\t)/.test(l) && l.trim() !== "";
+  const blank = (l: string) => l.trim() === "";
+  const out: Array<[number, number]> = [];
+  let inList = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (blank(line)) continue;
+    if (!indented(line)) {
+      inList = /^ {0,3}(?:[-*+]|\d{1,9}[.)])(?:\s|$)/.test(line);
+      continue;
+    }
+    if (inList) continue;
+    if (i > 0 && !blank(lines[i - 1]!)) continue; // cannot interrupt a paragraph
+    let end = i;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (indented(lines[j]!)) {
+        end = j;
+        continue;
+      }
+      if (blank(lines[j]!)) continue; // a blank line only ends the block if nothing indented follows
+      break;
+    }
+    out.push([lineStarts[i]!, lineStarts[end]! + lines[end]!.length]);
+    i = end;
+  }
+  return out;
+}
+
 /** Mask a region of `masked` in place (string surgery keeps the length). */
 function mask(masked: string, start: number, end: number): string {
   return masked.slice(0, start) + blank(masked.slice(start, end)) + masked.slice(end);
@@ -91,13 +153,19 @@ function mask(masked: string, start: number, end: number): string {
 
 export function prepare(path: string, text: string): Doc {
   let masked = text;
-  // Front matter at the very top.
-  const fm = /^---\r?\n[\s\S]*?\r?\n---\r?\n/.exec(text);
+  const allLines = text.split("\n");
+  const starts = [0];
+  for (let i = 0; i < text.length; i++) if (text[i] === "\n") starts.push(i + 1);
+  // Front matter at the very top, YAML (---) or TOML (+++).
+  const fm = /^(---|\+\+\+)\r?\n[\s\S]*?\r?\n\1\r?\n/.exec(text);
   if (fm) masked = mask(masked, 0, fm[0].length);
-  // Fenced code blocks (``` or ~~~).
-  for (const m of text.matchAll(/^(```|~~~)[^\n]*\n[\s\S]*?^\1[ \t]*$/gm)) {
-    masked = mask(masked, m.index!, m.index! + m[0].length);
-  }
+  // Fenced code blocks, including a fence inside a blockquote.
+  for (const [s, e] of fencedSpans(allLines, starts)) masked = mask(masked, s, e);
+  // Code quoted by indentation, which is how a README shows a diff.
+  for (const [s, e] of indentedSpans(allLines, starts)) masked = mask(masked, s, e);
+  // HTML blocks that hold code.
+  for (const [s, e] of delimited(text, "<pre", "</pre>")) masked = mask(masked, s, e);
+  for (const [s, e] of delimited(text, "<code", "</code>")) masked = mask(masked, s, e);
   // HTML comments (kept readable for the directive scan below, masked for rules).
   for (const [s, e] of delimited(text, "<!--", "-->")) masked = mask(masked, s, e);
   // Inline code.
