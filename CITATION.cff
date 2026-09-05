@@ -6,6 +6,15 @@ date-released: "2026-09-05"
 authors:
   - family-names: "Genc"
     given-names: "Efe"
+keywords:
+  - "linter"
+  - "machine-generated-text"
+  - "writing-quality"
+  - "commit-messages"
+  - "natural-language-processing"
+  - "static-analysis"
+  - "precision-corpus"
+  - "developer-tools"
 repository-code: "https://github.com/Bubblegunn/ai-slop-linter"
 license: MIT
 type: software
