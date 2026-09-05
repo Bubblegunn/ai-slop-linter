@@ -23,7 +23,8 @@
     "writing",
     "style-guide",
     "wikipedia-signs-of-ai-writing",
-    "commitlint"
+    "commitlint",
+    "commitlintplugin"
   ],
   "license": "MIT",
   "author": "Efe Genc",
