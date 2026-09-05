@@ -135,6 +135,17 @@ README'deki tabloda.
 - Diğer diller. Kelime kuralları İngilizce; yapısal olanlar her dilde çalışır.
   İkinci dil kural setleri [yol haritasında](ROADMAP.md).
 
+## Atıf
+
+Her sürüm Zenodo'da bir DOI ile arşivleniyor, böylece bir makale ya da rapor tam olarak
+çalıştırdığı kural kümesine işaret edebiliyor. Burada bu, çoğu araçtan daha önemli: kurallar
+değişiyor, yani sürümü söylenmeden verilen bir bulgu oranı tekrar edilebilir değil.
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22396875.svg)](https://doi.org/10.5281/zenodo.22396875)
+
+Bu **kavram** DOI'si: her zaman en yeni sürüme çözümlenir. Çalıştırdığınız sürümü atıflamak için
+o sayfada yan çubuktan sürümü seçin. Depodaki `CITATION.cff` aynı tanımlayıcıyı taşıyor.
+
 ## Lisans
 
 MIT.

@@ -11,6 +11,7 @@
   <img src="https://img.shields.io/github/stars/Bubblegunn/ai-slop-linter?style=flat-square&color=111111" alt="stars">
   <img src="https://img.shields.io/badge/dependencies-0-111111?style=flat-square" alt="zero dependencies">
   <img src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" alt="MIT">
+  <a href="https://doi.org/10.5281/zenodo.22396875"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22396875-111111?style=flat-square" alt="DOI"></a>
 </p>
 
 Readers have learned the tells of machine writing: the em dash, `not just X but Y`,
@@ -493,6 +494,19 @@ own rules that way: the curly quotes that flagged Jane Austen, and a `filler` ma
   no pack ships yet. What holds one up is a source, not code, and there is no equivalent
   of Wikipedia's Signs of AI writing in Turkish, Japanese, Korean, Hindi or Arabic.
   See [CONTRIBUTING.md](CONTRIBUTING.md) and issue #1.
+
+## Cite this
+
+Every release is archived on Zenodo with a DOI, so a paper or a report can point at the exact
+rule set it ran. That matters here more than in most tools: the rules change, so a finding rate
+quoted without a version is not reproducible.
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22396875.svg)](https://doi.org/10.5281/zenodo.22396875)
+
+That is the **concept** DOI: it always resolves to the newest version. To cite the exact version
+you ran, open that page, pick the version in the sidebar, and use the DOI shown there.
+`CITATION.cff` in this repository carries the same identifier, so GitHub's "Cite this repository"
+button produces correct BibTeX and APA without any copying by hand.
 
 ## Contributing
 

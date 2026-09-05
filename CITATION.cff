@@ -17,6 +17,11 @@ keywords:
   - "precision-corpus"
   - "developer-tools"
 repository-code: "https://github.com/Bubblegunn/ai-slop-linter"
+doi: "10.5281/zenodo.22396875"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.22396875"
+    description: "Concept DOI: always resolves to the newest archived version."
 license: MIT
 type: software
 abstract: "A linter for the patterns that mark writing as machine-made, with line numbers, safe fixes, a GitHub Action, a commit-msg hook and an agent skill. It does not guess who wrote the text; it shows the tells."
