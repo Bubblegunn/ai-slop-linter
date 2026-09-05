@@ -7,7 +7,7 @@ file does not match a fresh run.
 
 Two corpora, both committed under `bench/corpus`:
 
-The human corpus, 5,929 words, is public-domain prose written before any language
+The human corpus, 5,924 words, is public-domain prose written before any language
 model existed: three literary and scientific works from the 1840s to 1860s, and two Python
 Enhancement Proposals from 2001, which are the closest public-domain match to the register this
 tool is aimed at, technical documentation kept in a repository.
@@ -91,10 +91,10 @@ than a claim about who wrote Darwin.
 | file | words | grade | score | findings |
 |---|---:|---|---:|---:|
 | `human/austen-pride-and-prejudice.md` | 1120 | A | 0 | 0 |
-| `human/darwin-origin-of-species.md` | 1199 | B | 5 | 2 |
+| `human/darwin-origin-of-species.md` | 1198 | B | 5 | 2 |
 | `human/douglass-narrative.md` | 1202 | B | 5.8 | 3 |
 | `human/pep-257-docstrings.md` | 1174 | A | 2.6 | 1 |
-| `human/pep-8-style-guide.md` | 1234 | B | 3.2 | 2 |
+| `human/pep-8-style-guide.md` | 1230 | B | 3.3 | 2 |
 | `machine/article-intro.md` | 175 | F | 129.1 | 22 |
 | `machine/commit-messages.md` | 225 | F | 75.6 | 13 |
 | `machine/docs-page.md` | 225 | F | 56 | 10 |

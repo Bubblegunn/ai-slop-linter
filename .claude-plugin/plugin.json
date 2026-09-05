@@ -1,6 +1,6 @@
 {
   "name": "ai-slop-linter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lint prose for AI-writing tells. It does not guess who wrote it. It shows the tells.",
   "author": {
     "name": "Efe Genc",
@@ -9,6 +9,12 @@
   "homepage": "https://github.com/Bubblegunn/ai-slop-linter",
   "repository": "https://github.com/Bubblegunn/ai-slop-linter",
   "license": "MIT",
-  "keywords": ["ai-slop", "humanizer", "writing", "linter", "skills"],
+  "keywords": [
+    "ai-slop",
+    "humanizer",
+    "writing",
+    "linter",
+    "skills"
+  ],
   "skills": "./skills"
 }

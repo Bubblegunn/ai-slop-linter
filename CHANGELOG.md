@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.1.1 (unreleased)
+
+Words are counted in every script. The counter matched `[A-Za-z0-9'’]+`, so a run of
+Japanese was a single token and a word containing a non-ASCII letter split into pieces.
+Measured on eight documents each carrying one identical em dash, before and after:
+
+| document | characters | words before | grade before | words after | grade after |
+|---|---:|---:|:--:|---:|:--:|
+| Japanese | 626 | 1 | F | 323 | C |
+| Japanese, longer | 3,334 | 1 | F | 1,691 | A |
+| Chinese | 460 | 1 | F | 232 | C |
+| Korean | 531 | 1 | F | 119 | D |
+| Hebrew | 70 | 0 | F | 12 | not graded |
+| Arabic | 75 | 0 | F | 12 | not graded |
+| Turkish | 1,334 | 264 | C | 136 | D |
+| English | 1,366 | 200 | D | 200 | D |
+
+Length now counts for something: the longer Japanese document grades A where the shorter
+one grades C, and both were F before at any length. Turkish moves the other way, because
+its words were being split at every non-ASCII letter, which inflated the count and
+flattered the score. Scripts that separate words are tokenised; Chinese, Japanese, Thai
+and the rest go through the platform's Unicode segmenter rather than a
+characters-per-word constant nobody measured.
+
+The English corpus moved by five words in 5,929, from two words carrying accents that
+were previously counted as four. No grade changed; `pep-8-style-guide.md` moves from 3.2
+to 3.3.
+
 ## 0.1.0 (2026-09-05)
 
 

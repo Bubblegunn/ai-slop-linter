@@ -59,6 +59,27 @@ info 0.3), and a grade: A under 3, B under 8, C under 15, D under 30, F above. T
 exits 1 when any file has an error-severity finding or a score above `--max-score`
 (default 10), so it can sit in CI without a cleanup commit first.
 
+### How words are counted
+
+Scripts that put spaces between words are tokenised: a word keeps its accents, so
+`değişiklik` and `naïve` are one word each rather than three and two.
+
+Chinese, Japanese, Thai, Khmer, Lao, Burmese and Tibetan do not separate words with
+spaces, so a run of them is handed to the platform's Unicode word segmenter, the same
+`Intl.Segmenter` the browser and Node ship, which applies UAX #29 with ICU's dictionaries.
+The alternative was a characters-per-word constant, and there is no number to put there
+that anybody measured. Counts in those scripts therefore come from ICU and can move a
+little between Node versions; the table in `bench/PRECISION.md` is regenerated in CI, so
+a shift shows up as a failure rather than as a quietly different number. Where a build
+has no `Intl.Segmenter`, two characters count as one word and the count is an estimate,
+which counts fewer words and so grades a little harder, never easier.
+
+One thing this measure cannot do is compare languages against each other. Turkish builds
+long words out of suffixes, so the same text carries fewer of them than English does, and
+one tell in a Turkish document scores higher than the same tell in its English
+translation. The score is a comparison against other documents in the same language, not
+across them.
+
 ## The rules
 
 Twenty rules. Most come from the Wikipedia guideline

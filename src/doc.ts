@@ -155,6 +155,46 @@ function mask(masked: string, start: number, end: number): string {
   return masked.slice(0, start) + blank(masked.slice(start, end)) + masked.slice(end);
 }
 
+/**
+ * Scripts that do not put a space between words. A run of these is one long token to any
+ * regular expression, which is why counting words with a character class reported a
+ * three-thousand character Japanese document as one word.
+ */
+const SPACELESS =
+  /[\p{Script_Extensions=Han}\p{Script_Extensions=Hiragana}\p{Script_Extensions=Katakana}\p{Script_Extensions=Thai}\p{Script_Extensions=Khmer}\p{Script_Extensions=Lao}\p{Script_Extensions=Myanmar}\p{Script_Extensions=Tibetan}]+/gu;
+
+/** A word in a script that separates them: letters, the marks that belong to them, digits, apostrophes. */
+const TOKEN = /[\p{L}\p{M}\p{N}'\u2019]+/gu;
+
+const segmenter =
+  typeof Intl !== "undefined" && typeof Intl.Segmenter === "function"
+    ? new Intl.Segmenter(undefined, { granularity: "word" })
+    : undefined;
+
+/**
+ * How many words a document holds, in any script.
+ *
+ * Scripts that separate words are tokenised, which is what the tool has always done and
+ * keeps every English score where it was. Scripts that do not separate words are handed to
+ * the platform's Unicode segmenter (UAX #29 plus ICU's dictionaries), because the only
+ * alternative is a characters-per-word constant, and that would be a number nobody measured.
+ * Where the segmenter is missing, a build without full ICU, two characters count as one word
+ * and the count is an estimate; that is the conservative direction, since fewer words raise
+ * the score rather than lower it.
+ */
+export function countWords(text: string): number {
+  let spaceless = 0;
+  const separated = text.replace(SPACELESS, (run) => {
+    if (segmenter) {
+      for (const part of segmenter.segment(run)) if (part.isWordLike) spaceless++;
+    } else {
+      spaceless += Math.ceil([...run].length / 2);
+    }
+    return " ";
+  });
+  return (separated.match(TOKEN) ?? []).length + spaceless;
+}
+
 export function prepare(path: string, text: string): Doc {
   let masked = text;
   const allLines = text.split("\n");
@@ -200,7 +240,7 @@ export function prepare(path: string, text: string): Doc {
     }
   });
 
-  const words = (masked.match(/[A-Za-z0-9'’]+/g) ?? []).length;
+  const words = countWords(masked);
   return { path, text, masked, lineStarts, words, ignoredLines, ignoredRules, ignoredLineRules };
 }
 

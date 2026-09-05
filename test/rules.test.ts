@@ -41,6 +41,32 @@ test("dash rule: fixes between words to a comma, drops after punctuation, leaves
   assert.equal(left[0]?.fix, undefined);
 });
 
+test("word count: a word is a word in every script", () => {
+  // The old counter matched [A-Za-z0-9'’]+, so a run of Japanese was one token and a
+  // Turkish word split at every non-ASCII letter. A 3,300 character Japanese document
+  // counted as one word and was pinned at F whatever its length.
+  const count = (s: string) => prepare("x.md", s).words;
+
+  // Scripts that separate words are tokenised, and a word keeps its accents.
+  assert.equal(count("the quick brown fox"), 4);
+  assert.equal(count("naïve café résumé"), 3);
+  assert.equal(count("değişiklik güncelleştirme çalışması İstanbul'da yapıldı"), 5);
+  assert.equal(count("한국어 문서 예시"), 3);
+  assert.equal(count("מסמך בעברית כאן"), 3);
+  assert.equal(count("مستند بالعربية هنا"), 3);
+
+  // Scripts that do not separate words are segmented, so length counts for something.
+  const ja = "これは日本語の文書です。読みやすさを測るための文章を書いています。";
+  const zh = "这是一个中文文档，用于测试分词是否正确地工作。";
+  assert.ok(count(ja) >= 10, `japanese counted ${count(ja)}`);
+  assert.ok(count(zh) >= 8, `chinese counted ${count(zh)}`);
+  // Twice the text is about twice the words, which is what the old counter could not do.
+  assert.ok(count(ja + ja) > count(ja) * 1.5, `${count(ja + ja)} vs ${count(ja)}`);
+
+  // Latin and Japanese mixed in one line: both halves are counted.
+  assert.ok(count(`the CLI 使い方 guide`) >= 4);
+});
+
 test("dash rule: a nested list marker is a bullet, not a dash", () => {
   // An ordinary nested bullet list is a hyphen preceded only by indentation. Reading it as a
   // spaced hyphen gave every README with a nested list three errors and an F, which is the
