@@ -20,5 +20,5 @@
   "license": "MIT",
   "repository": { "type": "git", "url": "git+https://github.com/Bubblegunn/ai-slop-linter.git" },
   "homepage": "https://github.com/Bubblegunn/ai-slop-linter#readme",
-  "devDependencies": { "@types/node": "^22.15.0", "typescript": "^7.0.2" }
+  "devDependencies": { "@types/node": "^26.4.1", "typescript": "^7.0.2" }
 }
