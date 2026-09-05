@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.4
+## 0.1.4 (2026-09-05)
 
 Before this went out, every rule was run against correct published typography in thirteen languages, one text per language, all public domain and all typeset before any language model existed. The table is `bench/TYPOGRAPHY.md`, the corpus and its licences are in `bench/typography`, and the argument is `docs/typography-across-languages.md`.
 
