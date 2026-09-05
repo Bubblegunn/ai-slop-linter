@@ -179,7 +179,7 @@ f.applied;            // number of fixes
 
 ## Run on our own writing
 
-The tool on the four READMEs its author maintains and on the eleven essays on his site,
+The tool on the four READMEs its author maintains and on the eleven essays on the author's site,
 run on 5 September 2026 (`npx ai-slop-linter <file> --warn`):
 
 | text | words | grade | findings |
