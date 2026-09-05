@@ -338,7 +338,7 @@ each corpus. CI fails when the committed table no longer matches a fresh run.
 
 | corpus | words | grades |
 |---|---:|---|
-| human, all pre-2021 | 5,929 | A, A, B, B, B |
+| human, all pre-2021 | 5,924 | A, A, B, B, B |
 | unedited model output | 1,045 | F, F, F, F, F |
 
 The first run found a rule that was wrong. `curly-quotes` flagged 92 lines of *Pride and
