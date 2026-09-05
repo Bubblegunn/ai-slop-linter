@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1 (unreleased)
+## 0.1.1 (2026-09-05)
 
 Words are counted in every script. The counter matched `[A-Za-z0-9'’]+`, so a run of
 Japanese was a single token and a word containing a non-ASCII letter split into pieces.
