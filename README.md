@@ -173,6 +173,21 @@ names a different one. When a file is cleaned up, run `--baseline-write` again t
 text that fails; `--format markdown` prints the table the Action posts, for an issue or a
 review; `--format json` prints findings with `fixable` flags for other tools.
 
+**In the editor.** The text output is stable enough for a problem matcher, so VS Code shows
+findings in the Problems panel and underlines them inline. Copy the task from
+[.vscode/tasks.json](.vscode/tasks.json) into your own; the matcher is two patterns, the file
+header line and the finding lines under it:
+
+```json
+"pattern": [
+  { "regexp": "^(\\S.*?)  [A-F] \\(score .*\\)$", "file": 1 },
+  { "regexp": "^\\s+(\\d+):(\\d+)\\s+(error|warning|info)\\s+(\\S+)\\s+(.*)$",
+    "line": 1, "column": 2, "severity": 3, "code": 4, "message": 5, "loop": true }
+]
+```
+
+Run it with Tasks: Run Test Task. A test pins the output format to these patterns.
+
 ## For agents
 
 Most of the tells above are written by coding agents, in the commit messages and pull

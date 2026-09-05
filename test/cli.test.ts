@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtemp, writeFile, readFile, rm, mkdir } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -100,4 +101,29 @@ test("--rules lists every rule with its source; unknown options exit 2", () => {
   assert.match(r.out, /dash\s+error/);
   assert.match(r.out, /Wikipedia/);
   assert.equal(run(["--bogus"]).code, 2);
+});
+
+test("the text output matches the VS Code problem matcher in .vscode/tasks.json, line for line", () => {
+  const tasks = JSON.parse(readFileSync(join(process.cwd(), ".vscode", "tasks.json"), "utf8"));
+  const [header, finding] = tasks.tasks[0].problemMatcher.pattern.map((p: { regexp: string }) => new RegExp(p.regexp));
+  const text = run([join(fixtures, "sloppy.md"), join(fixtures, "clean.md"), "--warn"]);
+  const json = JSON.parse(run([join(fixtures, "sloppy.md"), join(fixtures, "clean.md"), "--format", "json", "--warn"]).out);
+  const expected = json.reduce((n: number, r: { findings: unknown[] }) => n + r.findings.length, 0);
+  let file = "";
+  const seen: { file: string; line: number; column: number; severity: string; code: string; message: string }[] = [];
+  for (const l of text.out.split("\n")) {
+    const h = header.exec(l);
+    if (h) {
+      file = h[1]!;
+      continue;
+    }
+    const f = finding.exec(l);
+    if (f) seen.push({ file, line: Number(f[1]), column: Number(f[2]), severity: f[3]!, code: f[4]!, message: f[5]! });
+    else assert.ok(l === "", `unmatched output line: ${JSON.stringify(l)}`);
+  }
+  assert.equal(seen.length, expected);
+  assert.ok(seen.length > 10);
+  assert.ok(seen.every((s) => s.file.endsWith("sloppy.md")), "every finding belongs to the file header above it");
+  const dash = seen.find((s) => s.code === "dash");
+  assert.ok(dash && dash.severity === "error" && dash.line > 0 && dash.column > 0 && dash.message.length > 0);
 });
