@@ -81,6 +81,22 @@ kendi metnini lint etmesini sağlar:
 npx skills add Bubblegunn/ai-slop-linter
 ```
 
+## Bir bulgu nereyi gösterir
+
+Her bulgu bir satır ve bir sütun taşır. Sütun, satırın başından itibaren mantıksal sırada
+sayılan, 1'den başlayan bir UTF-16 kod birimi konumudur. Editörünüzün durum çubuğunda gördüğünüz
+sayı, GitHub'ın iş akışı açıklamalarında kullandığı sayı ve bir dil sunucusunun bildireceği sayı
+budur; yani JSON'u okuyan bir araç, yazının hangi alfabede olduğunu bilmeden bulguya
+atlayabilir.
+
+Arapça ya da İbranice okuyan biri için bunu açıkça söylemek gerekir, çünkü mantıksal sıra gözün
+gördüğü sıra değildir: sağdan sola bir satırda 12. sütundaki karakter, metnin başından itibaren
+12. karakterdir ve ekranın sağ kenarına yakın çizilir, soldan 12. konumda değil. Sütunu çizim
+sırasına göre saymak, bu sayıyı kullanan bütün editörleri bozar ve alfabelerin karıştığı bir
+satırda yine belirsiz kalır. Bu yüzden sütun mantıksal kalıyor ve bulgu, eşleştiği metnin bir
+`excerpt` parçasını da taşıyor: okumak için güvenilir olan parça alıntıdır, sütun ise oraya
+atlayacak araç içindir.
+
 ## Ölçüm
 
 Bir linter boş yere uyarırsa kaldırılır, o yüzden yanlış uyarı maliyeti iddia değil ölçüm

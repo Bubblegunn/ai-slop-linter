@@ -172,24 +172,49 @@ const segmenter =
     : undefined;
 
 /**
+ * A run this long that the segmenter returns as a single word is a segmenter without the
+ * dictionary for that script, not a very long word. Twelve characters is a judgement: the
+ * longest single words in these scripts are shorter than that, and the check only decides
+ * whether to fall back to the estimate, never what a correctly segmented run counts as.
+ */
+const NO_DICTIONARY_AT = 12;
+
+/**
+ * Words in one run of a script that does not separate them.
+ *
+ * `Intl.Segmenter` existing is not the same as ICU carrying the word dictionaries it needs:
+ * a Node built with small ICU still constructs the segmenter and then hands back the whole
+ * run as one segment, which is the three-thousand-character-Japanese-document-is-one-word
+ * bug again, silently. So the result is checked rather than trusted, per run, which also
+ * covers a build that has the dictionary for one of these scripts and not another.
+ */
+function countSpaceless(run: string, seg = segmenter): number {
+  if (seg) {
+    let n = 0;
+    for (const part of seg.segment(run)) if (part.isWordLike) n++;
+    if (n > 1 || (n === 1 && [...run].length < NO_DICTIONARY_AT)) return n;
+  }
+  return Math.ceil([...run].length / 2);
+}
+
+/**
  * How many words a document holds, in any script.
  *
  * Scripts that separate words are tokenised, which is what the tool has always done and
  * keeps every English score where it was. Scripts that do not separate words are handed to
  * the platform's Unicode segmenter (UAX #29 plus ICU's dictionaries), because the only
  * alternative is a characters-per-word constant, and that would be a number nobody measured.
- * Where the segmenter is missing, a build without full ICU, two characters count as one word
- * and the count is an estimate; that is the conservative direction, since fewer words raise
- * the score rather than lower it.
+ * Where the segmenter is missing or has no dictionary for the script, two characters count
+ * as one word and the count is an estimate; that is the conservative direction, since fewer
+ * words raise the score rather than lower it.
+ *
+ * The second argument exists so a test can hand in a segmenter that behaves like a build
+ * without dictionaries; nothing in the tool passes it.
  */
-export function countWords(text: string): number {
+export function countWords(text: string, seg = segmenter): number {
   let spaceless = 0;
   const separated = text.replace(SPACELESS, (run) => {
-    if (segmenter) {
-      for (const part of segmenter.segment(run)) if (part.isWordLike) spaceless++;
-    } else {
-      spaceless += Math.ceil([...run].length / 2);
-    }
+    spaceless += countSpaceless(run, seg);
     return " ";
   });
   return (separated.match(TOKEN) ?? []).length + spaceless;

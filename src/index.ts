@@ -7,7 +7,7 @@ import { chatbot, announcing, closer, challenges, vagueSource, cutoff } from "./
 import { boldLabel, titleCase, emoji, curlyQuotes, hyphenDensity } from "./rules/formatting.js";
 
 export type { Doc, Finding, Fix, Rule, Severity } from "./doc.js";
-export { prepare } from "./doc.js";
+export { prepare, countWords } from "./doc.js";
 
 /** Every rule, in the order findings are reported. */
 export const rules: Rule[] = [

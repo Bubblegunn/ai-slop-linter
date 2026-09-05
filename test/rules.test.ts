@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { lintText, fixText, rules, gradeFor, prepare, rulesFor, languageRules, checkLanguagePack } from "../src/index.js";
+import { lintText, fixText, rules, gradeFor, prepare, rulesFor, languageRules, checkLanguagePack, countWords } from "../src/index.js";
 
 const fixture = (name: string) => readFileSync(join(import.meta.dirname, "..", "..", "test", "fixtures", name), "utf8");
 const sloppy = fixture("sloppy.md");
@@ -65,6 +65,22 @@ test("word count: a word is a word in every script", () => {
 
   // Latin and Japanese mixed in one line: both halves are counted.
   assert.ok(count(`the CLI 使い方 guide`) >= 4);
+});
+
+test("a segmenter without the dictionary for a script falls back to the estimate", () => {
+  // Intl.Segmenter existing is not the same as ICU carrying word dictionaries: a Node built
+  // with small ICU constructs the segmenter and then returns the whole run as one segment,
+  // which is the "a Japanese document is one word" bug again, without a symptom. So the
+  // result is checked per run rather than trusted.
+  const noDictionary = {
+    segment: (s: string) => [{ segment: s, index: 0, input: s, isWordLike: true }],
+  } as unknown as Intl.Segmenter;
+  const japanese = "経理担当者が一か月分の予約を表計算ファイルとして取得できます";
+  assert.equal(countWords(japanese, noDictionary), Math.ceil([...japanese].length / 2));
+  assert.ok(countWords(japanese, noDictionary) > 5, "a long run must never count as one word");
+  // A real segmenter still decides for itself, and a short run it calls one word stays one.
+  assert.ok(countWords(japanese) > 5);
+  assert.equal(countWords("東京", noDictionary), 1);
 });
 
 test("language packs are off unless asked for, and a pack has to be well formed", () => {

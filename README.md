@@ -98,11 +98,34 @@ is withheld. Commit messages and pull request descriptions are short by nature, 
 paths keep their score, because there the question is whether the text carries a tell and
 not how dense the tells are.
 
+Where the platform has `Intl.Segmenter` but ICU carries no word dictionary for the script,
+which is what a build with small ICU gives you, the segmenter returns the whole run as one
+segment. That is the same bug as before with no symptom, so the result is checked per run
+rather than trusted: a run of twelve characters or more that comes back as a single word
+falls to the estimate instead. The check is per run, so a build that has the dictionary for
+one of these scripts and not another gets the right treatment for each.
+
 One thing this measure cannot do is compare languages against each other. Turkish builds
 long words out of suffixes, so the same text carries fewer of them than English does, and
 one tell in a Turkish document scores higher than the same tell in its English
 translation. The score is a comparison against other documents in the same language, not
 across them.
+
+### Where a finding points
+
+Every finding carries a line and a column, and the column is a 1-based offset in UTF-16 code
+units, counted from the start of the line in logical order. That is the same number your
+editor's status bar shows, the same one GitHub uses for a workflow annotation, and the same
+one a language server would report, so a tool that consumes the JSON can jump to the finding
+without knowing anything about the script.
+
+For a reader of Arabic or Hebrew this is worth saying plainly, because logical order is not
+what the eye sees: the character at column 12 of a right-to-left line is the twelfth character
+from the start of the text, which is drawn near the right edge, not the twelfth position from
+the left of the screen. Counting columns the way the text is drawn would break every editor
+that consumes them and would still be ambiguous in a line that mixes scripts. So the column
+stays logical, and the finding carries an `excerpt` of the text it matched: for reading, the
+excerpt is the reliable part, and the column is for the tool that jumps to it.
 
 ## The rules
 

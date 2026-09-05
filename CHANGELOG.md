@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+
+`Intl.Segmenter` existing is not the same as ICU carrying the word dictionaries it needs. A Node built with small ICU constructs the segmenter and then hands back a whole run of Japanese, Chinese, Thai, Khmer, Lao, Burmese or Tibetan as a single segment, which is the "a three-thousand-character document counts as one word" bug again, this time with no symptom: the document would grade F whatever it said. The segmenter's answer is now checked per run instead of trusted, and a run of twelve characters or more that comes back as one word falls to the two-characters-per-word estimate. Per run, so a build carrying the dictionary for one of these scripts and not another gets the right treatment for each. Nothing changes on a full-ICU build, which is what CI and the published binaries use.
+
+Both READMEs gain a section on where a finding points: the column is a 1-based UTF-16 offset in logical order, which is what editors, GitHub annotations and language servers use, and for a reader of Arabic or Hebrew that is not the position the eye sees. The finding's `excerpt` is the part meant for reading; the column is for the tool that jumps to it.
+
 ## 0.1.3 (2026-09-05)
 
 `bench/agents.mjs` measures whether machine-written commit messages carry the tells this linter looks for, using the declaration the messages make themselves: an agent trailer, an agent suffix in the author name, or a known agent address. Trailers are stripped before counting, because the trailer is the label. Two runs are written up in `RESEARCH.md`, and the second is the reason it exists: on langchain-ai/openwiki the `dash` rule, the only one reported as an error, fires about two and a half times less on the declared side. One repository is an anecdote, and what it establishes is that the direction is not obvious.
