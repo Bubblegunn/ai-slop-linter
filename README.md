@@ -74,6 +74,14 @@ a shift shows up as a failure rather than as a quietly different number. Where a
 has no `Intl.Segmenter`, two characters count as one word and the count is an estimate,
 which counts fewer words and so grades a little harder, never easier.
 
+A document under 50 words is not graded at all. Below that the denominator is small
+enough that a single finding decides the letter, so the grade says more about the length
+than about the writing: a twelve-word fragment with one em dash used to print an F. The
+findings still stand, and an error-severity finding still fails the run; only the letter
+is withheld. Commit messages and pull request descriptions are short by nature, so those
+paths keep their score, because there the question is whether the text carries a tell and
+not how dense the tells are.
+
 One thing this measure cannot do is compare languages against each other. Turkish builds
 long words out of suffixes, so the same text carries fewer of them than English does, and
 one tell in a Turkish document scores higher than the same tell in its English
@@ -276,7 +284,7 @@ header line and the finding lines under it:
 
 ```json
 "pattern": [
-  { "regexp": "^(\\S.*?)  [A-F] \\(score .*\\)$", "file": 1 },
+  { "regexp": "^(\\S.*?)  (?:[A-F] \\(score |not graded \\().*$", "file": 1 },
   { "regexp": "^\\s+(\\d+):(\\d+)\\s+(error|warning|info)\\s+(\\S+)\\s+(.*)$",
     "line": 1, "column": 2, "severity": 3, "code": 4, "message": 5, "loop": true }
 ]

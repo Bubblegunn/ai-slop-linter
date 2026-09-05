@@ -152,10 +152,19 @@ test("score and grade thresholds", () => {
   assert.equal(gradeFor(30), "F");
   const r = lintText("s.md", sloppy);
   assert.equal(r.grade, "F");
-  assert.ok(r.score > 30);
+  assert.ok(r.score !== null && r.score > 30);
+
+  // Under the floor the denominator is small enough that one finding decides the letter,
+  // so the document is not graded rather than given an invented F. The findings stand.
   const short = lintText("t.md", "Let's dive in.");
-  // 50-word floor: one warning over 50 words = 20 per thousand
-  assert.equal(short.score, 20);
+  assert.equal(short.score, null);
+  assert.equal(short.grade, null);
+  assert.equal(short.findings.length, 1);
+
+  // Just over the floor it is graded again.
+  const long = lintText("u.md", `${"word ".repeat(60)}Let's dive in.`);
+  assert.ok(long.words >= 50);
+  assert.equal(typeof long.score, "number");
 });
 
 test("prepare counts words on the masked text and records ignore directives", () => {

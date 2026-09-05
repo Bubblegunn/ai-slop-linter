@@ -15,7 +15,7 @@
         "fileLocation": ["relative", "${workspaceFolder}"],
         "pattern": [
           {
-            "regexp": "^(\\S.*?)  [A-F] \\(score .*\\)$",
+            "regexp": "^(\\S.*?)  (?:[A-F] \\(score |not graded \\().*$",
             "file": 1
           },
           {

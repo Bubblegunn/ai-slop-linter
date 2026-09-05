@@ -101,6 +101,29 @@ than a claim about who wrote Darwin.
 | `machine/pull-request.md` | 161 | F | 47.2 | 7 |
 | `machine/readme-section.md` | 259 | F | 137.5 | 31 |
 
+## The same tell in seven scripts
+
+Each file under `bench/scripts` is one paragraph of release notes carrying exactly one em
+dash, written for this table. It exists because the word count used to be a Latin-alphabet
+character class, which read a run of Japanese as one word and Hebrew or Arabic as none, so
+every document in those scripts scored 60 and graded F whatever its length or content.
+
+| script | characters | words | score | grade |
+|---|---:|---:|---:|:--:|
+| `ar` | 831 | 146 | 20.5 | D |
+| `en` | 1027 | 193 | 15.5 | D |
+| `he` | 766 | 143 | 21 | D |
+| `ja` | 465 | 240 | 12.5 | C |
+| `ko` | 506 | 129 | 23.3 | D |
+| `tr` | 1011 | 142 | 21.1 | D |
+| `zh` | 331 | 176 | 17 | D |
+
+Words in Chinese, Japanese, Thai and the other scripts that do not separate words come from
+the platform's Unicode segmenter, so those rows can move a little with the ICU version Node
+carries; that is why they are checked here rather than assumed. The spread between scripts is
+real and is not a defect: a language that packs more meaning into each word carries fewer of
+them, so one tell weighs more. The score compares documents within a language.
+
 ## Sources
 
 See [`corpus/MANIFEST.md`](corpus/MANIFEST.md) for the origin and licence of every file.

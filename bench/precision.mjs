@@ -31,6 +31,16 @@ function read(group) {
 
 const groups = { human: read("human"), machine: read("machine") };
 
+/** One paragraph of the same technical register in seven scripts, each carrying one em dash. */
+const scriptsDir = join(root, "bench", "scripts");
+const scripts = readdirSync(scriptsDir)
+  .filter((f) => f.endsWith(".md"))
+  .sort()
+  .map((f) => {
+    const text = readFileSync(join(scriptsDir, f), "utf8");
+    return { name: f.replace(/\.md$/, ""), chars: [...text].length, result: lintText(`scripts/${f}`, text) };
+  });
+
 const totals = Object.fromEntries(
   Object.entries(groups).map(([name, files]) => [name, files.reduce((n, f) => n + f.result.words, 0)]),
 );
@@ -126,6 +136,23 @@ than a claim about who wrote Darwin.
 | file | words | grade | score | findings |
 |---|---:|---|---:|---:|
 ${[...groups.human, ...groups.machine].map(fileRow).join("\n")}
+
+## The same tell in seven scripts
+
+Each file under \`bench/scripts\` is one paragraph of release notes carrying exactly one em
+dash, written for this table. It exists because the word count used to be a Latin-alphabet
+character class, which read a run of Japanese as one word and Hebrew or Arabic as none, so
+every document in those scripts scored 60 and graded F whatever its length or content.
+
+| script | characters | words | score | grade |
+|---|---:|---:|---:|:--:|
+${scripts.map((f) => `| \`${f.name}\` | ${f.chars} | ${f.result.words} | ${f.result.score} | ${f.result.grade} |`).join("\n")}
+
+Words in Chinese, Japanese, Thai and the other scripts that do not separate words come from
+the platform's Unicode segmenter, so those rows can move a little with the ICU version Node
+carries; that is why they are checked here rather than assumed. The spread between scripts is
+real and is not a defect: a language that packs more meaning into each word carries fewer of
+them, so one tell weighs more. The score compares documents within a language.
 
 ## Sources
 

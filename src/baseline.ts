@@ -1,5 +1,5 @@
 import type { LintResult, Finding } from "./index.js";
-import { gradeFor, WEIGHTS } from "./index.js";
+import { GRADE_FLOOR, gradeFor, WEIGHTS } from "./index.js";
 
 /**
  * A baseline records the findings a repository already has, so a large repository can
@@ -66,8 +66,8 @@ export function applyBaseline(results: LintResult[], baseline: Baseline): { resu
     }
     baselined += mine;
     const weighted = kept.reduce((s, f) => s + WEIGHTS[f.severity], 0);
-    const score = Math.round((weighted / (Math.max(r.words, 50) / 1000)) * 10) / 10;
-    return { ...r, findings: kept, score, grade: gradeFor(score), errors: kept.filter((f) => f.severity === "error").length, baselined: mine };
+    const score = r.words < GRADE_FLOOR ? null : Math.round((weighted / (r.words / 1000)) * 10) / 10;
+    return { ...r, findings: kept, score, grade: score === null ? null : gradeFor(score), errors: kept.filter((f) => f.severity === "error").length, baselined: mine };
   });
   return { results: out, baselined };
 }

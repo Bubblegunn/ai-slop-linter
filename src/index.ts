@@ -47,15 +47,29 @@ export interface LintOptions {
   ignore?: string[];
   /** When set, only these rule ids run; `ignore` still applies on top. */
   only?: string[];
+  /**
+   * Words below which the document is not graded. Defaults to GRADE_FLOOR. A caller that
+   * only ever sees short text, the commit-message paths, passes 0, because there the
+   * question is whether a message carries a tell, not how dense the tells are.
+   */
+  floor?: number;
 }
+
+/**
+ * A document shorter than this is not graded. Below it the denominator is small enough
+ * that one finding decides the grade, so the letter says more about the length than about
+ * the writing. A 12-word fragment with one em dash used to score 60 and print an F.
+ */
+export const GRADE_FLOOR = 50;
 
 export interface LintResult {
   path: string;
   words: number;
   findings: Finding[];
-  /** Weighted findings per 1,000 words (a 50-word floor keeps short texts from exploding). */
-  score: number;
-  grade: string;
+  /** Weighted findings per 1,000 words, or null when the document is under GRADE_FLOOR words. */
+  score: number | null;
+  /** Null when the document is too short to grade; the findings still stand. */
+  grade: string | null;
   errors: number;
 }
 
@@ -80,9 +94,12 @@ export function lintDoc(doc: Doc, options: LintOptions = {}): LintResult {
   }
   findings.sort((a, b) => a.line - b.line || a.column - b.column);
   const weighted = findings.reduce((s, f) => s + WEIGHTS[f.severity], 0);
-  const denominator = Math.max(doc.words, 50) / 1000;
-  const score = Math.round((weighted / denominator) * 10) / 10;
-  return { path: doc.path, words: doc.words, findings, score, grade: gradeFor(score), errors: findings.filter((f) => f.severity === "error").length };
+  // Two separate things: the denominator is clamped so a short text cannot explode it,
+  // and a document under the floor is not graded at all.
+  const denominator = Math.max(doc.words, GRADE_FLOOR) / 1000;
+  const floor = options.floor ?? GRADE_FLOOR;
+  const score = doc.words < floor ? null : Math.round((weighted / denominator) * 10) / 10;
+  return { path: doc.path, words: doc.words, findings, score, grade: score === null ? null : gradeFor(score), errors: findings.filter((f) => f.severity === "error").length };
 }
 
 /** Apply every safe fix once. Overlapping fixes keep the earlier one. */

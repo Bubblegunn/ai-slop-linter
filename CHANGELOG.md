@@ -24,6 +24,14 @@ flattered the score. Scripts that separate words are tokenised; Chinese, Japanes
 and the rest go through the platform's Unicode segmenter rather than a
 characters-per-word constant nobody measured.
 
+A document under 50 words is no longer graded. Below the floor one finding decides the
+letter, so a twelve-word fragment with one em dash printed a confident F. The findings
+still stand and an error still fails the run; only the letter is withheld. Commit messages
+and pull request descriptions keep their score, since they are short by nature and the
+question there is whether the text carries a tell. `bench/scripts` adds one paragraph of
+the same release notes in seven scripts, each with one em dash, and `bench/PRECISION.md`
+records what each scores, so the counting cannot regress unnoticed.
+
 The English corpus moved by five words in 5,929, from two words carrying accents that
 were previously counted as four. No grade changed; `pep-8-style-guide.md` moves from 3.2
 to 3.3.

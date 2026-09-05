@@ -23,7 +23,13 @@ test("a baseline keys findings by file, rule and normalised excerpt, not by line
   const { results, baselined } = applyBaseline([moved], baseline);
   assert.equal(baselined, 2);
   assert.deepEqual(results[0]!.findings, []);
-  assert.equal(results[0]!.grade, "A");
+  // Long enough to be graded, so the grade after baselining still means something.
+  assert.ok(moved.words < 50, "fixture is short, so the graded case is checked separately");
+  assert.equal(results[0]!.grade, null);
+  const padded = lintText("a.md", `${"word ".repeat(60)}Let's dive in — now.`);
+  const gradedAfter = applyBaseline([padded], createBaseline([padded]));
+  assert.deepEqual(gradedAfter.results[0]!.findings, []);
+  assert.equal(gradedAfter.results[0]!.grade, "A");
   assert.equal(results[0]!.errors, 0);
   // A second dash is new: one entry per tell, consumed once.
   const twice = lintText("a.md", "Let's dive in — now.\n\nAnd — again.\n");

@@ -14,7 +14,7 @@ import { lintText } from "../../dist/src/index.js";
 export function tells(parsed, when = "always", value = {}) {
   const { maxScore = 10, ignore = [] } = value ?? {};
   const raw = typeof parsed?.raw === "string" ? parsed.raw : [parsed?.header, parsed?.body, parsed?.footer].filter(Boolean).join("\n\n");
-  const result = lintText("commit message", raw, { ignore });
+  const result = lintText("commit message", raw, { ignore, floor: 0 });
   const fails = result.errors > 0 || result.score > maxScore;
   const lines = result.findings.map((f) => `${f.line}:${f.column} ${f.severity} ${f.rule}: ${f.message}`);
   const reason = fails ? `AI-writing tells (score ${result.score}, max ${maxScore}):\n  ${lines.join("\n  ")}` : "";

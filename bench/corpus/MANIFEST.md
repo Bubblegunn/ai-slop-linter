@@ -43,3 +43,11 @@ for that reason rather than because the corpus tested them.
   two PEPs are the closest available and are still not a README.
 - No sample here is labelled by a person as machine-written or human-written after the fact.
   The labels are provenance, not judgement.
+
+## bench/scripts
+
+Seven paragraphs of release notes, one per script: Arabic, Chinese, English, Hebrew, Japanese,
+Korean and Turkish. Written for this repository, MIT with the rest of it, not drawn from any
+source. Each carries exactly one em dash, so the row-to-row difference is the word count and
+nothing else. They exist to pin how words are counted outside the Latin alphabet; they say
+nothing about rule precision and are not part of the human or machine corpus.

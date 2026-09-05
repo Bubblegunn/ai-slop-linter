@@ -34,11 +34,17 @@ test("stdin, json and github formats", () => {
   const g = run(["-", "--format", "github"], { input: "Let's dive in — now.\n" });
   assert.match(g.out, /::error file=stdin,line=1,col=\d+,title=dash::/);
   assert.match(g.out, /::warning file=stdin,line=1,col=1,title=announcing::/);
-  assert.match(g.out, /::error file=stdin,title=ai-slop-linter::F, score \d+(\.\d+)?, 2 findings; 1 error-severity tell/);
-  const over = run(["-", "--format", "github", "--max-score", "1"], { input: "Let's dive in now.\n" });
+  assert.match(g.out, /::error file=stdin,title=ai-slop-linter::not graded, 4 words, 2 findings; 1 error-severity tell/);
+  // Long enough to be graded: under the fifty-word floor there is no score to exceed.
+  const filler = "word ".repeat(60);
+  const over = run(["-", "--format", "github", "--max-score", "1"], { input: `${filler}Let's dive in now.\n` });
   assert.match(over.out, /::error file=stdin,title=ai-slop-linter::.*score above max-score 1/);
-  const fine = run(["-", "--format", "github"], { input: "Plain words here.\n" });
+  const fine = run(["-", "--format", "github"], { input: `${filler}and nothing else.\n` });
   assert.match(fine.out, /^::notice file=stdin,title=ai-slop-linter::A, score 0, 0 findings$/m);
+  // A clean fragment is reported without a grade rather than given one.
+  const tiny = run(["-", "--format", "github"], { input: "Plain words here.\n" });
+  assert.match(tiny.out, /^::notice file=stdin,title=ai-slop-linter::not graded, 3 words, 0 findings$/m);
+  assert.equal(tiny.code, 0);
   assert.equal(fine.code, 0);
 });
 
@@ -46,7 +52,7 @@ test("markdown format is a pasteable table with the same facts", () => {
   const m = run(["-", "--format", "markdown"], { input: "Let's dive in — now.\n" });
   assert.equal(m.code, 1);
   assert.match(m.out, /^\*\*ai-slop-linter\*\*: 2 findings in 1 text, 1 failing\.$/m);
-  assert.match(m.out, /^\| stdin \| F \(fails\) \| \d+(\.\d+)? \| 2 \|$/m);
+  assert.match(m.out, /^\| stdin \| not graded \(fails\) \| — \| 2 \|$/m);
   assert.match(m.out, /^\| stdin:1 \| dash \| error \| em dash[^|]*\|$/m);
   assert.match(m.out, /does not judge who wrote/);
   const clean = run(["-", "--format", "markdown"], { input: "Plain words here.\n" });
@@ -106,8 +112,11 @@ test("--rules lists every rule with its source; unknown options exit 2", () => {
 test("the text output matches the VS Code problem matcher in .vscode/tasks.json, line for line", () => {
   const tasks = JSON.parse(readFileSync(join(process.cwd(), ".vscode", "tasks.json"), "utf8"));
   const [header, finding] = tasks.tasks[0].problemMatcher.pattern.map((p: { regexp: string }) => new RegExp(p.regexp));
-  const text = run([join(fixtures, "sloppy.md"), join(fixtures, "clean.md"), "--warn"]);
-  const json = JSON.parse(run([join(fixtures, "sloppy.md"), join(fixtures, "clean.md"), "--format", "json", "--warn"]).out);
+  // short.md is under the grading floor, so its header reads "not graded"; the matcher has
+  // to recognise that line too, or the findings under it lose their file in the editor.
+  const files = [join(fixtures, "sloppy.md"), join(fixtures, "clean.md"), join(fixtures, "short.md")];
+  const text = run([...files, "--warn"]);
+  const json = JSON.parse(run([...files, "--format", "json", "--warn"]).out);
   const expected = json.reduce((n: number, r: { findings: unknown[] }) => n + r.findings.length, 0);
   let file = "";
   const seen: { file: string; line: number; column: number; severity: string; code: string; message: string }[] = [];
@@ -123,7 +132,11 @@ test("the text output matches the VS Code problem matcher in .vscode/tasks.json,
   }
   assert.equal(seen.length, expected);
   assert.ok(seen.length > 10);
-  assert.ok(seen.every((s) => s.file.endsWith("sloppy.md")), "every finding belongs to the file header above it");
+  assert.ok(
+    seen.every((s) => s.file.endsWith("sloppy.md") || s.file.endsWith("short.md")),
+    "every finding belongs to the file header above it",
+  );
+  assert.ok(seen.some((s) => s.file.endsWith("short.md")), "the ungraded file's findings are attributed to it");
   const dash = seen.find((s) => s.code === "dash");
   assert.ok(dash && dash.severity === "error" && dash.line > 0 && dash.column > 0 && dash.message.length > 0);
 });

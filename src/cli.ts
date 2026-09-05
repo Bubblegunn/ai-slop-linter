@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
-import { lintText, fixText, rules } from "./index.js";
+import { GRADE_FLOOR, lintText, fixText, rules } from "./index.js";
 import type { LintResult, Finding, Rule } from "./index.js";
 import { expand, globToRegExp, skippedByDefault } from "./glob.js";
 import { applyBaseline, createBaseline, parseBaseline } from "./baseline.js";
@@ -183,7 +183,13 @@ function renderText(results: (LintResult & { baselined?: number })[], fixed: Map
   for (const r of results) {
     const applied = fixed.get(r.path) ?? 0;
     const set = r.baselined ?? 0;
-    out.push(`${r.path}  ${r.grade} (score ${r.score}, ${r.words} words, ${r.findings.length} finding${r.findings.length === 1 ? "" : "s"}${set ? `, ${set} baselined` : ""}${applied ? `, ${applied} fixed` : ""})`);
+    const extra = `${set ? `, ${set} baselined` : ""}${applied ? `, ${applied} fixed` : ""}`;
+    const count = `${r.findings.length} finding${r.findings.length === 1 ? "" : "s"}`;
+    out.push(
+      r.score === null
+        ? `${r.path}  not graded (${r.words} words, under ${GRADE_FLOOR}, ${count}${extra})`
+        : `${r.path}  ${r.grade} (score ${r.score}, ${r.words} words, ${count}${extra})`,
+    );
     for (const f of r.findings) out.push(`  ${String(f.line).padStart(4)}:${String(f.column).padEnd(3)} ${f.severity.padEnd(7)} ${f.rule.padEnd(20)} ${f.message}`);
   }
   return out.join("\n");
@@ -220,9 +226,9 @@ export function renderGithub(results: LintResult[], maxScore: number): string {
       const level = f.severity === "error" ? "error" : f.severity === "warning" ? "warning" : "notice";
       out.push(`::${level} file=${r.path},line=${f.line},col=${f.column},title=${f.rule}::${f.message}`);
     }
-    const summary = `${r.grade}, score ${r.score}, ${r.findings.length} findings`;
+    const summary = r.score === null ? `not graded, ${r.words} words, ${r.findings.length} findings` : `${r.grade}, score ${r.score}, ${r.findings.length} findings`;
     if (r.errors > 0) out.push(`::error file=${r.path},title=ai-slop-linter::${summary}; ${r.errors} error-severity tell${r.errors === 1 ? "" : "s"}`);
-    else if (r.score > maxScore) out.push(`::error file=${r.path},title=ai-slop-linter::${summary}; score above max-score ${maxScore}`);
+    else if (r.score !== null && r.score > maxScore) out.push(`::error file=${r.path},title=ai-slop-linter::${summary}; score above max-score ${maxScore}`);
     else out.push(`::notice file=${r.path},title=ai-slop-linter::${summary}`);
   }
   return out.join("\n");
@@ -233,13 +239,13 @@ const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
 /** A Markdown table for a pull request comment or an issue; the same facts as the text output. */
 export function renderMarkdown(results: LintResult[], maxScore: number): string {
   const total = results.reduce((n, r) => n + r.findings.length, 0);
-  const failing = results.filter((r) => r.errors > 0 || r.score > maxScore);
+  const failing = results.filter((r) => r.errors > 0 || (r.score !== null && r.score > maxScore));
   const out: string[] = [];
   out.push(`**ai-slop-linter**: ${total} finding${total === 1 ? "" : "s"} in ${results.length} text${results.length === 1 ? "" : "s"}${failing.length ? `, ${failing.length} failing` : ""}.`);
   out.push("");
   out.push("| text | grade | score | findings |");
   out.push("|---|---|---|---|");
-  for (const r of results) out.push(`| ${cell(r.path)} | ${r.grade}${failing.includes(r) ? " (fails)" : ""} | ${r.score} | ${r.findings.length} |`);
+  for (const r of results) out.push(`| ${cell(r.path)} | ${r.grade ?? "not graded"}${failing.includes(r) ? " (fails)" : ""} | ${r.score ?? "—"} | ${r.findings.length} |`);
   if (total) {
     out.push("");
     out.push("| where | rule | severity | message |");
@@ -365,7 +371,11 @@ async function main() {
   for (const input of inputs) {
     const display = input.file ? relative(o.cwd, input.file).split(sep).join("/") : input.name;
     const per = settingsFor(config, display);
-    const opts = { ignore: [...per.ignore, ...o.ignore], only: o.only.length ? o.only : per.only };
+    // A commit message and a pull request description are short by nature, so the floor
+    // that stops a fragment being graded would leave every one of them ungraded. There the
+    // question is whether the text carries a tell, not how dense the tells are.
+    const short = input.file === null && input.name !== "stdin";
+    const opts = { ignore: [...per.ignore, ...o.ignore], only: o.only.length ? o.only : per.only, ...(short ? { floor: 0 } : {}) };
     limits.set(display, o.maxScore ?? per.maxScore ?? 10);
     if (o.fix && input.file) {
       const r = fixText(display, input.text, opts);
@@ -401,7 +411,7 @@ async function main() {
     const first = results.flatMap((r) => r.findings)[0];
     if (first) console.error(`\nWhy any of these is a tell, and what to write instead: slop --explain ${first.rule}`);
   }
-  const failing = results.filter((r) => r.errors > 0 || r.score > limitFor(r.path));
+  const failing = results.filter((r) => r.errors > 0 || (r.score !== null && r.score > limitFor(r.path)));
   if (failing.length && !o.warn) process.exit(1);
 }
 
