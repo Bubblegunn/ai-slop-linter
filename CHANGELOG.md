@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.3 (unreleased)
+
+`bench/agents.mjs` measures whether machine-written commit messages carry the tells this linter looks for, using the declaration the messages make themselves: an agent trailer, an agent suffix in the author name, or a known agent address. Trailers are stripped before counting, because the trailer is the label. Two runs are written up in `RESEARCH.md`, and the second is the reason it exists: on langchain-ai/openwiki the `dash` rule, the only one reported as an error, fires about two and a half times less on the declared side. One repository is an anecdote, and what it establishes is that the direction is not obvious.
+
+The score's design has a citation and its conventions are admitted. Charoenwet, Thongtanunam, Pham and Treude (ISSTA 2024) found warning density the most effective prioritisation and warning severity the least, which is the shape this tool's per-1,000-words score takes; the README also says the study ranks warnings per line of code in security review rather than findings per words of prose, so it supports the shape and proves nothing about this tool. The severity weights and the grade boundaries are labelled as conventions with nothing behind them.
+
+A test now fails when a test file exists and is not named in the test script, after that mistake hid tests twice in one day in two repositories.
+
+A `.mailmap`, because `surviving-lines --identities` reported this repository as two people.
+
+`CITATION.cff` carries keywords and the author's ORCID, which are the fields an archive reads when it mints a record.
+
 ## 0.1.2 (2026-09-05)
 
 `--history` reads your own commit messages back over time: weighted tells per 1,000 words per month, quarter or year, with the most common rule in each period. It defaults to the address in the repository's own git config, so the thing it shows you first is your own writing. Trailers are not counted, because a `Co-Authored-By` line is a template rather than prose. There is no grade and no exit code: a bar comparing one period against another describes writing over time, and a lone period gets no bar at all, because a bar is a comparison. `--author`, `--by month|quarter|year` and `--since` narrow it; `--format json` gives the periods for charting.
