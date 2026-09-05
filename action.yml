@@ -1,0 +1,76 @@
+name: ai-slop-linter
+description: Lint the pull request description and the changed Markdown files for AI-writing tells, with line-level annotations.
+author: Efe Genc
+branding:
+  icon: edit-3
+  color: gray-dark
+inputs:
+  files:
+    description: Space-separated files or globs to lint. Default is every .md file changed in the pull request (or every .md file on other events).
+    required: false
+    default: ""
+  pr-body:
+    description: Also lint the pull request description on pull_request events.
+    required: false
+    default: "true"
+  max-score:
+    description: Fail when a file's score is above this number (weighted findings per 1,000 words).
+    required: false
+    default: "10"
+  warn-only:
+    description: Annotate but never fail the job.
+    required: false
+    default: "false"
+  version:
+    description: ai-slop-linter version to run.
+    required: false
+    default: "0.1.0"
+runs:
+  using: composite
+  steps:
+    - name: Lint changed Markdown
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PR: ${{ github.event.pull_request.number }}
+        FILES: ${{ inputs.files }}
+        MAX: ${{ inputs.max-score }}
+        WARN: ${{ inputs.warn-only }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -uo pipefail
+        flags=(--format github --max-score "$MAX")
+        [ "$WARN" = "true" ] && flags+=(--warn)
+        if [ -n "$FILES" ]; then
+          # shellcheck disable=SC2086
+          set -- $FILES
+        elif [ -n "${PR:-}" ]; then
+          mapfile -t changed < <(gh pr diff "$PR" --name-only | grep -Ei '\.(md|mdx|markdown)$' || true)
+          set -- "${changed[@]}"
+        else
+          set -- '**/*.md'
+        fi
+        if [ "$#" -eq 0 ]; then
+          echo "no Markdown changed; nothing to lint"
+          exit 0
+        fi
+        npx --yes "ai-slop-linter@${VERSION}" "${flags[@]}" "$@"
+    - name: Lint the pull request description
+      if: ${{ inputs.pr-body == 'true' && github.event_name == 'pull_request' }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PR: ${{ github.event.pull_request.number }}
+        MAX: ${{ inputs.max-score }}
+        WARN: ${{ inputs.warn-only }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -uo pipefail
+        flags=(--format github --max-score "$MAX")
+        [ "$WARN" = "true" ] && flags+=(--warn)
+        body="$(gh pr view "$PR" --json body --jq .body)"
+        if [ -z "$body" ]; then
+          echo "empty pull request description; nothing to lint"
+          exit 0
+        fi
+        printf '%s\n' "$body" | npx --yes "ai-slop-linter@${VERSION}" "${flags[@]}" -

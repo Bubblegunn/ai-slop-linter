@@ -1,0 +1,12 @@
+#!/bin/sh
+# ai-slop-linter commit-msg hook: refuses a commit message that carries AI-writing tells.
+# Install with scripts/install-hook.sh, or copy this file to .git/hooks/commit-msg.
+# Skip once with: git commit --no-verify
+
+if command -v ai-slop-linter >/dev/null 2>&1; then
+  ai-slop-linter --commit-msg "$1"
+elif [ -x node_modules/.bin/ai-slop-linter ]; then
+  node_modules/.bin/ai-slop-linter --commit-msg "$1"
+else
+  npx --yes ai-slop-linter --commit-msg "$1"
+fi

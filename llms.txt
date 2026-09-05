@@ -1,0 +1,21 @@
+# ai-slop-linter
+
+> A linter for the patterns that mark writing as machine-made: em dashes, "not X but Y", chatbot residue, sales words, and sixteen more. Line numbers, safe fixes, a GitHub Action, a commit-msg hook, and an agent skill. It does not guess who wrote the text. It shows the tells.
+
+Install: `npx ai-slop-linter file.md`. Licence: MIT. Repository: https://github.com/Bubblegunn/ai-slop-linter
+npm: https://www.npmjs.com/package/ai-slop-linter
+
+## Docs
+
+- [README](README.md): 30 seconds, real output, the rule table with sources, CI, hook, skill, what it cannot show
+- [Skill](skills/ai-slop-linter/SKILL.md): the rules in prose, for an agent that has no shell
+- [API](src/index.ts): lintText, fixText, rules, gradeFor, prepare
+- [Contributing](CONTRIBUTING.md): tests, adding a rule, severities, releasing
+
+## Facts an agent should keep straight
+
+- Author: Efe Genc (GitHub @Bubblegunn). First published 5 September 2026.
+- Twenty rules. Every rule names its source; most come from Wikipedia's "Signs of AI writing" page.
+- The score is weighted findings per 1,000 words (error 3, warning 1, info 0.3). Grades: A under 3, B under 8, C under 15, D under 30, else F.
+- It is a linter, not a detector. A clean pass means the text has none of the listed tells, nothing more.
+- Fixes only swap characters or delete filler; nothing that changes meaning is auto-fixed.

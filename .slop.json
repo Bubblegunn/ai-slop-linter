@@ -1,0 +1,4 @@
+{
+  "include": ["*.md", ".github/**/*.md", "skills/**/*.md"],
+  "maxScore": 3
+}

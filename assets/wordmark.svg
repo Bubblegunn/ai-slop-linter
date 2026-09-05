@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="200" viewBox="0 0 960 200" role="img" aria-label="ai-slop-linter">
+  <rect width="960" height="200" fill="#ffffff"/>
+  <g font-family="'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace" font-size="56" font-weight="600" fill="#111111">
+    <text x="60" y="118">ai-slop-linter</text>
+  </g>
+  <g font-family="'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace" font-size="20" fill="#555555">
+    <text x="62" y="160">it does not guess who wrote it. it shows the tells.</text>
+  </g>
+  <g font-family="'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace" font-size="56" fill="#b42318">
+    <text x="640" y="118">—</text>
+  </g>
+  <line x1="628" y1="100" x2="700" y2="100" stroke="#b42318" stroke-width="6" stroke-linecap="round" transform="rotate(-20 664 100)"/>
+  <line x1="628" y1="100" x2="700" y2="100" stroke="#b42318" stroke-width="6" stroke-linecap="round" transform="rotate(20 664 100)"/>
+  <g font-family="'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace" font-size="18" fill="#111111">
+    <text x="740" y="80">error  dash</text>
+    <text x="740" y="106">warn   not-x-but-y</text>
+    <text x="740" y="132">warn   ai-vocabulary</text>
+  </g>
+  <rect x="60" y="40" width="840" height="1" fill="#111111"/>
+</svg>

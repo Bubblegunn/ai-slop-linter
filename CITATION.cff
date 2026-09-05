@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, cite it as below."
+title: "ai-slop-linter"
+version: "0.1.0"
+date-released: "2026-09-05"
+authors:
+  - family-names: "Genc"
+    given-names: "Efe"
+repository-code: "https://github.com/Bubblegunn/ai-slop-linter"
+license: MIT
+type: software
+abstract: "A linter for the patterns that mark writing as machine-made, with line numbers, safe fixes, a GitHub Action, a commit-msg hook and an agent skill. It does not guess who wrote the text; it shows the tells."
