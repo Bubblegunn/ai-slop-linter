@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { resolve, relative, sep } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 import { lintText, fixText, rules } from "./index.js";
 import type { LintResult, Finding, Rule } from "./index.js";
-import { expand, skippedByDefault } from "./glob.js";
+import { expand, globToRegExp, skippedByDefault } from "./glob.js";
 import { applyBaseline, createBaseline, parseBaseline } from "./baseline.js";
 
 const HELP = `usage: slop [options] [file|glob|-]...
@@ -15,13 +15,15 @@ const HELP = `usage: slop [options] [file|glob|-]...
        slop --pr <number>       lint a pull request description (needs gh)
        slop --rules             list the rules
        slop --explain <rule>    why one rule exists, with a before and after
+       slop --init [action|hook] write .slop.json, and the workflow or the commit hook
 
 Lints text for the patterns that mark writing as machine-made. It does not guess who
 wrote it; it shows the tells, with line numbers, and fixes the safe ones.
 
   --fix                 apply safe fixes in place (dashes, curly quotes, filler phrases)
   --format <f>          text (default), json, github (workflow annotations) or markdown (a table to paste)
-  --ignore <rule,...>   skip rules by id
+  --ignore <rule,...>   skip rules by id (--skip is the same flag)
+  --only <rule,...>     run only these rules
   --max-score <n>       fail when a file's score is above n (default from .slop.json, else 10)
   --warn                never exit 1; report only
   --baseline            fail only on findings not listed in the baseline file
@@ -43,6 +45,7 @@ interface Options {
   fix: boolean;
   format: "text" | "json" | "github" | "markdown";
   ignore: string[];
+  only: string[];
   maxScore: number | undefined;
   warn: boolean;
   baseline: boolean;
@@ -51,10 +54,11 @@ interface Options {
   cwd: string;
   listRules: boolean;
   explain?: string;
+  init?: string;
 }
 
 export function parse(argv: string[]): Options {
-  const o: Options = { targets: [], commit: false, fix: false, format: "text", ignore: [], maxScore: undefined, warn: false, baseline: false, baselineWrite: false, cwd: process.cwd(), listRules: false };
+  const o: Options = { targets: [], commit: false, fix: false, format: "text", ignore: [], only: [], maxScore: undefined, warn: false, baseline: false, baselineWrite: false, cwd: process.cwd(), listRules: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     const next = () => {
@@ -70,7 +74,8 @@ export function parse(argv: string[]): Options {
       const f = next();
       if (f !== "text" && f !== "json" && f !== "github" && f !== "markdown") throw new Error(`--format must be text, json, github or markdown`);
       o.format = f;
-    } else if (a === "--ignore") o.ignore.push(...next().split(",").map((s) => s.trim()).filter(Boolean));
+    } else if (a === "--ignore" || a === "--skip") o.ignore.push(...next().split(",").map((s) => s.trim()).filter(Boolean));
+    else if (a === "--only") o.only.push(...next().split(",").map((s) => s.trim()).filter(Boolean));
     else if (a === "--max-score") o.maxScore = Number(next());
     else if (a === "--warn") o.warn = true;
     else if (a === "--baseline") o.baseline = true;
@@ -79,6 +84,11 @@ export function parse(argv: string[]): Options {
     else if (a === "--cwd") o.cwd = resolve(next());
     else if (a === "--rules") o.listRules = true;
     else if (a === "--explain") o.explain = next();
+    else if (a === "--init") {
+      const what = argv[i + 1];
+      o.init = what && !what.startsWith("-") ? (i++, what) : "config";
+      if (o.init !== "config" && o.init !== "action" && o.init !== "hook") throw new Error(`--init takes nothing, "action" or "hook", not "${o.init}"`);
+    }
     else if (a === "-h" || a === "--help") {
       console.log(HELP);
       process.exit(0);
@@ -91,11 +101,36 @@ export function parse(argv: string[]): Options {
   return o;
 }
 
-interface Config {
+interface Rules {
   ignore?: string[];
+  only?: string[];
   maxScore?: number;
+}
+
+interface Override extends Rules {
+  /** Globs, matched against the path as reported, with forward slashes. */
+  files: string[];
+}
+
+interface Config extends Rules {
   include?: string[];
   baseline?: string;
+  /** Applied in order to a file that matches; a later entry wins over an earlier one. */
+  overrides?: Override[];
+}
+
+/** The rule settings for one path: the top level, then every override that matches it. */
+export function settingsFor(config: Config, path: string): { ignore: string[]; only: string[]; maxScore: number | undefined } {
+  let ignore = config.ignore ?? [];
+  let only = config.only ?? [];
+  let maxScore = config.maxScore;
+  for (const o of config.overrides ?? []) {
+    if (!o.files.some((g) => globToRegExp(g).test(path))) continue;
+    if (o.ignore !== undefined) ignore = o.ignore;
+    if (o.only !== undefined) only = o.only;
+    if (o.maxScore !== undefined) maxScore = o.maxScore;
+  }
+  return { ignore, only, maxScore };
 }
 
 function loadConfig(cwd: string): Config {
@@ -216,6 +251,66 @@ export function renderMarkdown(results: LintResult[], maxScore: number): string 
   return out.join("\n");
 }
 
+
+const CONFIG = `{
+  "include": ["**/*.md"],
+  "maxScore": 10,
+  "overrides": [
+    { "files": ["CHANGELOG.md"], "ignore": ["bold-label"] }
+  ]
+}
+`;
+
+const WORKFLOW = `name: prose
+on: pull_request
+permissions:
+  contents: read
+  pull-requests: write # read is enough with comment: "false"
+jobs:
+  slop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: Bubblegunn/ai-slop-linter@v0
+        # with:
+        #   max-score: "5"
+        #   baseline: ".slop-baseline.json"
+`;
+
+const HOOK = `#!/bin/sh
+# ai-slop-linter commit-msg hook: refuses a commit message that carries AI-writing tells.
+# Skip once with: git commit --no-verify
+
+if command -v ai-slop-linter >/dev/null 2>&1; then
+  ai-slop-linter --commit-msg "$1"
+elif [ -x node_modules/.bin/ai-slop-linter ]; then
+  node_modules/.bin/ai-slop-linter --commit-msg "$1"
+else
+  npx --yes ai-slop-linter --commit-msg "$1"
+fi
+`;
+
+/** Write one file, refusing to touch a file that is already there. */
+function put(path: string, body: string, mode?: number): string {
+  if (existsSync(path)) throw new Error(`${path} already exists; delete it first or edit it by hand`);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, body, mode === undefined ? undefined : { mode });
+  return path;
+}
+
+/** `--init`: the config, and on request the workflow or the commit-msg hook. */
+export function init(cwd: string, what: "config" | "action" | "hook"): string[] {
+  const written: string[] = [];
+  const config = resolve(cwd, ".slop.json");
+  if (!existsSync(config) || what === "config") written.push(put(config, CONFIG));
+  if (what === "action") written.push(put(resolve(cwd, ".github/workflows/prose.yml"), WORKFLOW));
+  if (what === "hook") {
+    if (!existsSync(resolve(cwd, ".git"))) throw new Error("no .git directory here; run this inside a repository");
+    written.push(put(resolve(cwd, ".git/hooks/commit-msg"), HOOK, 0o755));
+  }
+  return written;
+}
+
 async function main() {
   let o: Options;
   try {
@@ -223,6 +318,19 @@ async function main() {
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
     process.exit(2);
+  }
+  if (o.init !== undefined) {
+    let written: string[];
+    try {
+      written = init(o.cwd, o.init as "config" | "action" | "hook");
+    } catch (err) {
+      // A file that is already there is a refusal to act, not a usage error.
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+    for (const file of written) console.log(`wrote ${relative(o.cwd, file).split(sep).join("/")}`);
+    console.log("run `npx ai-slop-linter` to see what it finds");
+    return;
   }
   if (o.explain !== undefined) {
     const rule = rules.find((r) => r.id === o.explain);
@@ -238,8 +346,13 @@ async function main() {
     return;
   }
   const config = loadConfig(o.cwd);
-  const ignore = [...(config.ignore ?? []), ...o.ignore];
-  const maxScore = o.maxScore ?? config.maxScore ?? 10;
+  const known = new Set(rules.map((r) => r.id));
+  for (const id of [...o.only, ...o.ignore]) {
+    if (!known.has(id)) {
+      console.error(`unknown rule "${id}"\nrules: ${rules.map((r) => r.id).join(", ")}`);
+      process.exit(2);
+    }
+  }
   const inputs = collect(o, config);
   if (!inputs.length) {
     console.error("nothing to lint (no files matched)");
@@ -247,19 +360,26 @@ async function main() {
   }
   let results: (LintResult & { baselined?: number })[] = [];
   const fixed = new Map<string, number>();
+  /** Each file gets the settings its own path resolves to, so docs can be stricter than notes. */
+  const limits = new Map<string, number>();
   for (const input of inputs) {
     const display = input.file ? relative(o.cwd, input.file).split(sep).join("/") : input.name;
+    const per = settingsFor(config, display);
+    const opts = { ignore: [...per.ignore, ...o.ignore], only: o.only.length ? o.only : per.only };
+    limits.set(display, o.maxScore ?? per.maxScore ?? 10);
     if (o.fix && input.file) {
-      const r = fixText(display, input.text, { ignore });
+      const r = fixText(display, input.text, opts);
       if (r.applied) {
         writeFileSync(input.file, r.text);
         fixed.set(display, r.applied);
       }
       results.push(r.result);
     } else {
-      results.push(lintText(display, input.text, { ignore }));
+      results.push(lintText(display, input.text, opts));
     }
   }
+  const limitFor = (path: string) => limits.get(path) ?? o.maxScore ?? config.maxScore ?? 10;
+  const maxScore = o.maxScore ?? config.maxScore ?? 10;
   const baselineFile = resolve(o.cwd, o.baselineFile ?? config.baseline ?? ".slop-baseline.json");
   if (o.baselineWrite) {
     const baseline = createBaseline(results);
@@ -281,7 +401,7 @@ async function main() {
     const first = results.flatMap((r) => r.findings)[0];
     if (first) console.error(`\nWhy any of these is a tell, and what to write instead: slop --explain ${first.rule}`);
   }
-  const failing = results.filter((r) => r.errors > 0 || r.score > maxScore);
+  const failing = results.filter((r) => r.errors > 0 || r.score > limitFor(r.path));
   if (failing.length && !o.warn) process.exit(1);
 }
 

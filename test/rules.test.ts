@@ -149,3 +149,9 @@ test("every rule carries the material --explain prints", () => {
     assert.ok(ids.has(r.id), `${r.id}: its own before example does not trip it`);
   }
 });
+
+test("filler: \"in order to\" is the padded infinitive, not \"in order\" followed by \"to\"", () => {
+  assert.ok(idsIn("In order to run the tests, install the dependencies.").has("filler"));
+  assert.ok(!idsIn("Overrides are applied in order to any file whose path matches.").has("filler"));
+  assert.ok(!idsIn("The steps run in order to the end of the list.").has("filler"));
+});

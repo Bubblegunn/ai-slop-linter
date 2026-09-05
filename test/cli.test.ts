@@ -151,3 +151,70 @@ test("the text output tells the reader how to learn about a rule that fired", ()
   const clean = run(["-", "--warn"], { input: "Plain words here.\n" });
   assert.ok(!/--explain/.test(clean.err), "no hint when nothing fired");
 });
+
+test("per-path overrides in .slop.json, and --only narrowing to one rule", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "slop-cfg-"));
+  try {
+    await mkdir(join(dir, "docs"));
+    // Both files carry the same two tells: a dash (error) and a filler phrase (info).
+    const text = "In order to ship — we tested.\n";
+    await writeFile(join(dir, "notes.md"), text);
+    await writeFile(join(dir, "docs", "guide.md"), text);
+    await writeFile(
+      join(dir, ".slop.json"),
+      JSON.stringify({
+        include: ["**/*.md"],
+        ignore: ["dash"],
+        maxScore: 50,
+        overrides: [{ files: ["docs/**"], ignore: [], maxScore: 1 }],
+      }),
+    );
+    const r = run(["--warn", "--format", "json"], { cwd: dir });
+    const byPath = Object.fromEntries(JSON.parse(r.out).map((x: { path: string; findings: { rule: string }[] }) => [x.path, x.findings.map((f) => f.rule)]));
+    assert.deepEqual(byPath["notes.md"], ["filler"], "the top-level ignore drops the dash");
+    assert.ok(byPath["docs/guide.md"].includes("dash"), "the override puts the dash back for docs");
+    // The override's stricter maxScore fails only the file it covers.
+    const strict = run(["--format", "json"], { cwd: dir });
+    assert.equal(strict.code, 1);
+    // --only narrows to the named rules, whatever the config says.
+    const only = run(["--warn", "--only", "dash", "--format", "json"], { cwd: dir });
+    const rules = new Set(JSON.parse(only.out).flatMap((x: { findings: { rule: string }[] }) => x.findings.map((f) => f.rule)));
+    assert.deepEqual([...rules], ["dash"]);
+    assert.equal(run(["--warn", "--only", "no-such-rule"], { cwd: dir }).code, 2);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("--init writes a config, and the Action or the hook on request, without overwriting", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "slop-init-"));
+  try {
+    const bare = run(["--init"], { cwd: dir });
+    assert.equal(bare.code, 0);
+    assert.match(bare.out, /wrote \.slop\.json/);
+    const config = JSON.parse(await readFile(join(dir, ".slop.json"), "utf8"));
+    assert.ok(Array.isArray(config.include) && config.include.length);
+    assert.equal(typeof config.maxScore, "number");
+    // Running it twice must not clobber an edited config.
+    await writeFile(join(dir, ".slop.json"), JSON.stringify({ include: ["mine.md"] }));
+    const again = run(["--init"], { cwd: dir });
+    assert.equal(again.code, 1);
+    assert.match(again.err, /already exists/);
+    assert.deepEqual(JSON.parse(await readFile(join(dir, ".slop.json"), "utf8")).include, ["mine.md"]);
+
+    const action = run(["--init", "action"], { cwd: dir });
+    assert.equal(action.code, 0);
+    const yml = await readFile(join(dir, ".github", "workflows", "prose.yml"), "utf8");
+    assert.match(yml, /uses: Bubblegunn\/ai-slop-linter@v0/);
+    assert.match(action.out, /\.github\/workflows\/prose\.yml/);
+
+    await mkdir(join(dir, ".git", "hooks"), { recursive: true });
+    const hook = run(["--init", "hook"], { cwd: dir });
+    assert.equal(hook.code, 0);
+    const sh = await readFile(join(dir, ".git", "hooks", "commit-msg"), "utf8");
+    assert.match(sh, /--commit-msg/);
+    assert.equal(run(["--init", "nonsense"], { cwd: dir }).code, 2);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

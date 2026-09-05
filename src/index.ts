@@ -45,6 +45,8 @@ export const GRADES: [string, number][] = [
 
 export interface LintOptions {
   ignore?: string[];
+  /** When set, only these rule ids run; `ignore` still applies on top. */
+  only?: string[];
 }
 
 export interface LintResult {
@@ -69,8 +71,10 @@ export function lintText(path: string, text: string, options: LintOptions = {}):
 
 export function lintDoc(doc: Doc, options: LintOptions = {}): LintResult {
   const ignore = new Set(options.ignore ?? []);
+  const only = options.only?.length ? new Set(options.only) : undefined;
   const findings: Finding[] = [];
   for (const rule of rules) {
+    if (only && !only.has(rule.id)) continue;
     if (ignore.has(rule.id)) continue;
     for (const f of rule.check(doc)) if (!suppressed(doc, f)) findings.push(f);
   }

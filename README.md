@@ -126,7 +126,34 @@ To silence a finding you have judged wrong:
 <!-- slop-ignore vague-source, triad -->    (from here to the end of the file)
 ```
 
-A `.slop.json` at the root sets defaults: `{ "include": ["docs/**/*.md"], "ignore": ["emoji"], "maxScore": 5 }`.
+## Configuration
+
+`slop --init` writes a `.slop.json` to start from, `slop --init action` adds the pull request
+workflow, and `slop --init hook` adds the commit-msg hook. None of them overwrites a file that
+is already there.
+
+A repository rarely wants one setting everywhere. Published docs can be held to a stricter
+score than a changelog, and a file that quotes machine writing needs the rules that quote
+turns on switched off. `overrides` are applied in order to any file whose path matches, and a
+later entry wins:
+
+```json
+{
+  "include": ["**/*.md"],
+  "maxScore": 10,
+  "ignore": ["emoji"],
+  "overrides": [
+    { "files": ["docs/**/*.md"], "maxScore": 3, "ignore": [] },
+    { "files": ["CHANGELOG.md"], "ignore": ["bold-label", "emoji"] },
+    { "files": ["**/prompts/*.md"], "only": ["chatbot", "cutoff-disclaimer"] }
+  ]
+}
+```
+
+On the command line, `--only dash,chatbot` runs those rules and nothing else, `--ignore`
+(also spelled `--skip`) drops rules, and both reject a rule id that does not exist rather than
+silently doing nothing. Inside a file, `<!-- slop-ignore-next-line dash -->` covers one line
+and `<!-- slop-ignore dash, emoji -->` covers the rest of the file.
 
 ## Fixes
 

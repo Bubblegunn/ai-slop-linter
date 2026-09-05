@@ -53,7 +53,8 @@ export const sales: Rule = {
 };
 
 const FILLERS: [RegExp, string][] = [
-  [/\bin order to\b/gi, "to"],
+  // "in order to run" is padding; "applied in order to any file" is "in order" plus "to".
+  [/\bin order to(?! (?:a|an|the|any|each|every|this|that|these|those|my|your|its|their|our|some|no|another|either|neither)\b)/gi, "to"],
   [/\bdue to the fact that\b/gi, "because"],
   [/\b(?:it is|it's) important to note that\b ?/gi, ""],
   [/\bat this point in time\b/gi, "now"],

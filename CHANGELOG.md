@@ -2,6 +2,10 @@
 
 ## 0.1.0 (unreleased)
 
+`.slop.json` takes `overrides`: a list of `{ files, ignore, only, maxScore }` entries applied in order to any path that matches, so published docs can be held to a stricter score than a changelog. `--only` runs the named rules and nothing else, `--skip` is another spelling of `--ignore`, and both reject an unknown rule id instead of doing nothing.
+
+`--init` writes a `.slop.json`, `--init action` the pull request workflow and `--init hook` the commit-msg hook. It refuses to overwrite a file that exists, and it names every file it wrote.
+
 `--explain <rule>` prints one rule in full: why the pattern reads as machine-made, a line that trips it, the same line rewritten, and the case where a maintainer should switch it off. Every rule carries the material, and a test asserts that each rule's own example trips it. The text output names the command for the first rule that fired, on stderr so the machine-readable format is untouched.
 
 A measured corpus in `bench/`: five public-domain texts written before any language model (Austen, Douglass, Darwin, PEP 8, PEP 257) and five pieces of unedited model output. `npm run bench` writes `bench/PRECISION.md` with the rate per rule in each corpus and lists every finding on the human side; CI fails when the committed table is stale. The human texts grade A or B, the model texts F.
