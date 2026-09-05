@@ -2,23 +2,75 @@
   "name": "ai-slop-linter",
   "version": "0.1.0",
   "description": "Linter for AI-writing tells in commit messages, PR descriptions and docs. Rule-based, line numbers, safe fixes, GitHub Action, pre-commit hook, agent skill.",
+  "keywords": [
+    "ai-slop",
+    "ai-writing",
+    "ai-generated-text",
+    "linter",
+    "prose-linter",
+    "humanizer",
+    "em-dash",
+    "commit-messages",
+    "pull-requests",
+    "markdown",
+    "docs",
+    "github-action",
+    "pre-commit",
+    "commit-msg-hook",
+    "claude-code",
+    "agent-skills",
+    "cli",
+    "writing",
+    "style-guide",
+    "wikipedia-signs-of-ai-writing"
+  ],
+  "license": "MIT",
+  "author": "Efe Genc",
+  "homepage": "https://github.com/Bubblegunn/ai-slop-linter#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bubblegunn/ai-slop-linter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Bubblegunn/ai-slop-linter/issues"
+  },
   "type": "module",
-  "main": "./dist/src/index.js",
-  "types": "./dist/src/index.d.ts",
-  "exports": { ".": { "types": "./dist/src/index.d.ts", "import": "./dist/src/index.js" } },
-  "bin": { "ai-slop-linter": "./dist/src/cli.js", "slop": "./dist/src/cli.js" },
-  "files": ["dist/src", "skills", "README.md", "LICENSE"],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    }
+  },
+  "bin": {
+    "ai-slop-linter": "./dist/src/cli.js",
+    "slop": "./dist/src/cli.js"
+  },
+  "files": [
+    "dist/src",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test dist/test/rules.test.js dist/test/cli.test.js",
     "prepublishOnly": "npm test"
   },
-  "engines": { "node": ">=20" },
-  "keywords": ["ai-slop", "ai-writing", "linter", "humanizer", "em-dash", "commit-messages", "pull-requests", "markdown", "cli", "writing"],
-  "author": "Efe Genc",
-  "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/Bubblegunn/ai-slop-linter.git" },
-  "homepage": "https://github.com/Bubblegunn/ai-slop-linter#readme",
-  "devDependencies": { "@arethetypeswrong/cli": "^0.18.5", "@types/node": "^26.4.1", "publint": "^0.3.24", "typescript": "^7.0.2" }
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@types/node": "^26.4.1",
+    "publint": "^0.3.24",
+    "typescript": "^7.0.2"
+  },
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts"
 }
