@@ -7,6 +7,7 @@ import { createRequire } from "node:module";
 import { lintText, fixText, rules } from "./index.js";
 import type { LintResult, Finding } from "./index.js";
 import { expand, skippedByDefault } from "./glob.js";
+import { applyBaseline, createBaseline, parseBaseline } from "./baseline.js";
 
 const HELP = `usage: slop [options] [file|glob|-]...
        slop --commit            lint the last commit message
@@ -22,6 +23,9 @@ wrote it; it shows the tells, with line numbers, and fixes the safe ones.
   --ignore <rule,...>   skip rules by id
   --max-score <n>       fail when a file's score is above n (default from .slop.json, else 10)
   --warn                never exit 1; report only
+  --baseline            fail only on findings not listed in the baseline file
+  --baseline-write      record the current findings as the baseline, then exit 0
+  --baseline-file <f>   the baseline file (default .slop-baseline.json, or "baseline" in .slop.json)
   --cwd <dir>           working directory (default: current)
   -h, --help            this text
   --version             print the version
@@ -40,12 +44,15 @@ interface Options {
   ignore: string[];
   maxScore: number | undefined;
   warn: boolean;
+  baseline: boolean;
+  baselineWrite: boolean;
+  baselineFile?: string;
   cwd: string;
   listRules: boolean;
 }
 
 export function parse(argv: string[]): Options {
-  const o: Options = { targets: [], commit: false, fix: false, format: "text", ignore: [], maxScore: undefined, warn: false, cwd: process.cwd(), listRules: false };
+  const o: Options = { targets: [], commit: false, fix: false, format: "text", ignore: [], maxScore: undefined, warn: false, baseline: false, baselineWrite: false, cwd: process.cwd(), listRules: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     const next = () => {
@@ -64,6 +71,9 @@ export function parse(argv: string[]): Options {
     } else if (a === "--ignore") o.ignore.push(...next().split(",").map((s) => s.trim()).filter(Boolean));
     else if (a === "--max-score") o.maxScore = Number(next());
     else if (a === "--warn") o.warn = true;
+    else if (a === "--baseline") o.baseline = true;
+    else if (a === "--baseline-write") o.baselineWrite = true;
+    else if (a === "--baseline-file") o.baselineFile = next();
     else if (a === "--cwd") o.cwd = resolve(next());
     else if (a === "--rules") o.listRules = true;
     else if (a === "-h" || a === "--help") {
@@ -82,6 +92,7 @@ interface Config {
   ignore?: string[];
   maxScore?: number;
   include?: string[];
+  baseline?: string;
 }
 
 function loadConfig(cwd: string): Config {
@@ -129,11 +140,12 @@ function collect(o: Options, config: Config): { name: string; file: string | nul
 
 const stripCommentLines = (msg: string) => msg.split("\n").filter((l) => !l.startsWith("#")).join("\n");
 
-function renderText(results: LintResult[], fixed: Map<string, number>): string {
+function renderText(results: (LintResult & { baselined?: number })[], fixed: Map<string, number>): string {
   const out: string[] = [];
   for (const r of results) {
     const applied = fixed.get(r.path) ?? 0;
-    out.push(`${r.path}  ${r.grade} (score ${r.score}, ${r.words} words, ${r.findings.length} finding${r.findings.length === 1 ? "" : "s"}${applied ? `, ${applied} fixed` : ""})`);
+    const set = r.baselined ?? 0;
+    out.push(`${r.path}  ${r.grade} (score ${r.score}, ${r.words} words, ${r.findings.length} finding${r.findings.length === 1 ? "" : "s"}${set ? `, ${set} baselined` : ""}${applied ? `, ${applied} fixed` : ""})`);
     for (const f of r.findings) out.push(`  ${String(f.line).padStart(4)}:${String(f.column).padEnd(3)} ${f.severity.padEnd(7)} ${f.rule.padEnd(20)} ${f.message}`);
   }
   return out.join("\n");
@@ -171,7 +183,7 @@ async function main() {
     console.error("nothing to lint (no files matched)");
     process.exit(2);
   }
-  const results: LintResult[] = [];
+  let results: (LintResult & { baselined?: number })[] = [];
   const fixed = new Map<string, number>();
   for (const input of inputs) {
     const display = input.file ? relative(o.cwd, input.file).split(sep).join("/") : input.name;
@@ -185,6 +197,17 @@ async function main() {
     } else {
       results.push(lintText(display, input.text, { ignore }));
     }
+  }
+  const baselineFile = resolve(o.cwd, o.baselineFile ?? config.baseline ?? ".slop-baseline.json");
+  if (o.baselineWrite) {
+    const baseline = createBaseline(results);
+    writeFileSync(baselineFile, `${JSON.stringify(baseline, null, 2)}\n`);
+    console.log(`wrote ${baseline.findings.length} findings to ${relative(o.cwd, baselineFile).split(sep).join("/")}`);
+    return;
+  }
+  if (o.baseline) {
+    if (!existsSync(baselineFile)) throw new Error(`baseline file ${relative(o.cwd, baselineFile)} not found; run with --baseline-write first`);
+    results = applyBaseline(results, parseBaseline(readFileSync(baselineFile, "utf8"))).results;
   }
   if (o.format === "json") console.log(JSON.stringify(results.map((r) => ({ ...r, findings: r.findings.map(withoutFix) })), null, 2));
   else if (o.format === "github") console.log(renderGithub(results));

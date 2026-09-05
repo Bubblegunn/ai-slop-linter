@@ -142,6 +142,19 @@ it; `npx ai-slop-linter --commit-msg "$1"` is all it does.
 **Pull request bodies from the shell.** `npx ai-slop-linter --pr 42` reads the body
 through `gh` and lints it like a file.
 
+**Adopting it in a repository with history.** A baseline records the findings that are
+already there, so the check fails only on new ones and nobody has to land a cleanup
+commit first:
+
+```
+npx ai-slop-linter --baseline-write      # writes .slop-baseline.json
+npx ai-slop-linter --baseline            # fails only on findings the baseline does not list
+```
+
+Entries are keyed by file, rule and the sentence, not by line number, so editing above
+a known tell does not make it new. Commit the file; `"baseline": "path"` in `.slop.json`
+names a different one. When a file is cleaned up, run `--baseline-write` again to shrink it.
+
 **CI output.** `--format github` prints workflow annotations; `--format json` prints
 findings with `fixable` flags for other tools.
 
