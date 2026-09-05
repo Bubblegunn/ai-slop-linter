@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-09-05)
 
 A fenced block now closes on a file with CRLF line endings. The closing marker was matched with `[ \t]*$`, which a trailing carriage return fails, so on Windows a fence stayed open and masked the rest of the document. Caught by the Windows leg of CI on the fixture above, and pinned by a test that feeds the same fixture with CRLF endings.
 
