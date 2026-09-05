@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.3 (unreleased)
+## 0.1.3 (2026-09-05)
 
 `bench/agents.mjs` measures whether machine-written commit messages carry the tells this linter looks for, using the declaration the messages make themselves: an agent trailer, an agent suffix in the author name, or a known agent address. Trailers are stripped before counting, because the trailer is the label. Two runs are written up in `RESEARCH.md`, and the second is the reason it exists: on langchain-ai/openwiki the `dash` rule, the only one reported as an error, fires about two and a half times less on the declared side. One repository is an anecdote, and what it establishes is that the direction is not obvious.
 
