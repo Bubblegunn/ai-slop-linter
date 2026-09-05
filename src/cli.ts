@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, resolve, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
@@ -9,7 +9,7 @@ import type { LintResult, Finding, Rule } from "./index.js";
 import { expand, globToRegExp, skippedByDefault } from "./glob.js";
 import { applyBaseline, createBaseline, parseBaseline } from "./baseline.js";
 
-const HELP = `usage: slop [options] [file|glob|-]...
+const HELP = `usage: slop [options] [file|dir|glob|-]...
        slop --commit            lint the last commit message
        slop --commit-msg <file> lint the message being written (what a commit-msg hook receives)
        slop --pr <number>       lint a pull request description (needs gh)
@@ -33,7 +33,8 @@ wrote it; it shows the tells, with line numbers, and fixes the safe ones.
   -h, --help            this text
   --version             print the version
 
-With no targets, lints the globs in .slop.json ("include", default ["**/*.md"]) under --cwd.
+A directory means the Markdown inside it. With no targets, lints the globs in .slop.json
+("include", default ["**/*.md"]) under --cwd.
 Exit 1 on any error-severity finding or a score above --max-score, 2 on usage errors.
 Inline: <!-- slop-ignore-next-line [rule] --> and <!-- slop-ignore rule-a, rule-b --> (rest of file).`;
 
@@ -164,6 +165,17 @@ function collect(o: Options, config: Config): { name: string; file: string | nul
     }
     const abs = resolve(o.cwd, t);
     if (existsSync(abs) && !/[*?]/.test(t)) {
+      // A directory means the Markdown inside it, which is what running with no target
+      // does for the whole repository. Reading it as a file printed EISDIR.
+      if (statSync(abs).isDirectory()) {
+        const found = expand(abs, ["**/*.md"]).filter((rel) => !skippedByDefault(rel));
+        if (found.length === 0) throw new Error(`no Markdown files under ${t}`);
+        for (const rel of found) {
+          const file = resolve(abs, rel);
+          inputs.push({ name: relative(o.cwd, file).split(sep).join("/"), file, text: readFileSync(file, "utf8") });
+        }
+        continue;
+      }
       inputs.push({ name: t, file: abs, text: readFileSync(abs, "utf8") });
       continue;
     }

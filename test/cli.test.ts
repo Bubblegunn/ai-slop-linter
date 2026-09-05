@@ -101,6 +101,32 @@ test("--commit reads the last commit, --commit-msg the file a hook hands over; .
   }
 });
 
+test("a directory argument lints the Markdown inside it", async () => {
+  // Reading a directory as a file printed "EISDIR: illegal operation on a directory".
+  const dir = await mkdtemp(join(tmpdir(), "slop-dir-"));
+  try {
+    await mkdir(join(dir, "sub"));
+    await writeFile(join(dir, "top.md"), "Let's dive in — here.\n");
+    await writeFile(join(dir, "sub", "nested.md"), "Certainly! Another — one.\n");
+    await writeFile(join(dir, "notes.txt"), "Let's dive in — not Markdown.\n");
+
+    const r = run([dir, "--warn"]);
+    assert.equal(r.code, 0);
+    assert.match(r.out, /top\.md/);
+    assert.match(r.out, /nested\.md/, "walks into subdirectories, as a bare run does");
+    assert.doesNotMatch(r.out, /notes\.txt/, "only Markdown, as a bare run does");
+
+    const empty = await mkdtemp(join(tmpdir(), "slop-empty-"));
+    const none = run([empty]);
+    assert.equal(none.code, 2);
+    assert.match(none.err, /no Markdown files under/);
+    assert.doesNotMatch(none.err, /EISDIR/);
+    await rm(empty, { recursive: true, force: true });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("--rules lists every rule with its source; unknown options exit 2", () => {
   const r = run(["--rules"]);
   assert.equal(r.code, 0);

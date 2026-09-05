@@ -24,6 +24,10 @@ flattered the score. Scripts that separate words are tokenised; Chinese, Japanes
 and the rest go through the platform's Unicode segmenter rather than a
 characters-per-word constant nobody measured.
 
+A directory argument lints the Markdown inside it, which is what running with no target
+does for the whole repository. It used to print `EISDIR: illegal operation on a directory,
+read`. A directory holding no Markdown now says so and exits 2.
+
 A document under 50 words is no longer graded. Below the floor one finding decides the
 letter, so a twelve-word fragment with one em dash printed a confident F. The findings
 still stand and an error still fails the run; only the letter is withheld. Commit messages
