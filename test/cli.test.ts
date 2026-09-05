@@ -127,3 +127,27 @@ test("the text output matches the VS Code problem matcher in .vscode/tasks.json,
   const dash = seen.find((s) => s.code === "dash");
   assert.ok(dash && dash.severity === "error" && dash.line > 0 && dash.column > 0 && dash.message.length > 0);
 });
+
+test("--explain teaches one rule and points at the list when the id is unknown", () => {
+  const r = run(["--explain", "not-x-but-y"]);
+  assert.equal(r.code, 0);
+  assert.match(r.out, /^not-x-but-y {2}warning/m);
+  assert.match(r.out, /Wikipedia, Signs of AI writing: Negative parallelisms/);
+  assert.match(r.out, /^Why$/m);
+  assert.match(r.out, /^Instead of$/m);
+  assert.match(r.out, /isn't just a linter/);
+  assert.match(r.out, /^Write$/m);
+  assert.match(r.out, /^Ignore it when$/m);
+  const missing = run(["--explain", "no-such-rule"]);
+  assert.equal(missing.code, 2);
+  assert.match(missing.err, /unknown rule "no-such-rule"/);
+  assert.match(missing.err, /not-x-but-y/);
+});
+
+test("the text output tells the reader how to learn about a rule that fired", () => {
+  const r = run(["-", "--warn"], { input: "Let's dive in and delve into the tapestry.\n" });
+  assert.match(r.err, /slop --explain announcing/);
+  assert.ok(!/--explain/.test(r.out), "the hint stays off stdout so the text format keeps parsing");
+  const clean = run(["-", "--warn"], { input: "Plain words here.\n" });
+  assert.ok(!/--explain/.test(clean.err), "no hint when nothing fired");
+});

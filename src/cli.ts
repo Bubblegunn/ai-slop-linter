@@ -5,7 +5,7 @@ import { resolve, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 import { lintText, fixText, rules } from "./index.js";
-import type { LintResult, Finding } from "./index.js";
+import type { LintResult, Finding, Rule } from "./index.js";
 import { expand, skippedByDefault } from "./glob.js";
 import { applyBaseline, createBaseline, parseBaseline } from "./baseline.js";
 
@@ -14,6 +14,7 @@ const HELP = `usage: slop [options] [file|glob|-]...
        slop --commit-msg <file> lint the message being written (what a commit-msg hook receives)
        slop --pr <number>       lint a pull request description (needs gh)
        slop --rules             list the rules
+       slop --explain <rule>    why one rule exists, with a before and after
 
 Lints text for the patterns that mark writing as machine-made. It does not guess who
 wrote it; it shows the tells, with line numbers, and fixes the safe ones.
@@ -49,6 +50,7 @@ interface Options {
   baselineFile?: string;
   cwd: string;
   listRules: boolean;
+  explain?: string;
 }
 
 export function parse(argv: string[]): Options {
@@ -76,6 +78,7 @@ export function parse(argv: string[]): Options {
     else if (a === "--baseline-file") o.baselineFile = next();
     else if (a === "--cwd") o.cwd = resolve(next());
     else if (a === "--rules") o.listRules = true;
+    else if (a === "--explain") o.explain = next();
     else if (a === "-h" || a === "--help") {
       console.log(HELP);
       process.exit(0);
@@ -151,6 +154,30 @@ function renderText(results: (LintResult & { baselined?: number })[], fixed: Map
   return out.join("\n");
 }
 
+/** One rule, in full, for someone who has just been told their text has it. */
+export function explain(rule: Rule): string {
+  return [
+    `${rule.id}  ${rule.severity}  ${rule.title}`,
+    `source: ${rule.source}`,
+    "",
+    "Why",
+    indent(rule.why),
+    "",
+    "Instead of",
+    indent(rule.example.before.trimEnd()),
+    "",
+    "Write",
+    indent(rule.example.after.trimEnd()),
+    "",
+    "Ignore it when",
+    indent(rule.ignoreWhen),
+    "",
+    `Switch it off with --ignore ${rule.id}, or per file with <!-- slop-ignore ${rule.id} -->.`,
+  ].join("\n");
+}
+
+const indent = (text: string) => text.split("\n").map((l) => `  ${l}`).join("\n");
+
 export function renderGithub(results: LintResult[], maxScore: number): string {
   const out: string[] = [];
   for (const r of results) {
@@ -197,6 +224,15 @@ async function main() {
     console.error(err instanceof Error ? err.message : String(err));
     process.exit(2);
   }
+  if (o.explain !== undefined) {
+    const rule = rules.find((r) => r.id === o.explain);
+    if (!rule) {
+      console.error(`unknown rule "${o.explain}"\nrules: ${rules.map((r) => r.id).join(", ")}`);
+      process.exit(2);
+    }
+    console.log(explain(rule));
+    return;
+  }
   if (o.listRules) {
     for (const r of rules) console.log(`${r.id.padEnd(22)} ${r.severity.padEnd(8)} ${r.title}  (${r.source})`);
     return;
@@ -238,7 +274,13 @@ async function main() {
   if (o.format === "json") console.log(JSON.stringify(results.map((r) => ({ ...r, findings: r.findings.map(withoutFix) })), null, 2));
   else if (o.format === "github") console.log(renderGithub(results, maxScore));
   else if (o.format === "markdown") console.log(renderMarkdown(results, maxScore));
-  else console.log(renderText(results, fixed));
+  else {
+    console.log(renderText(results, fixed));
+    // Guidance for a person, kept off stdout so the text format stays parseable
+    // by the problem matcher and by anything piping it.
+    const first = results.flatMap((r) => r.findings)[0];
+    if (first) console.error(`\nWhy any of these is a tell, and what to write instead: slop --explain ${first.rule}`);
+  }
   const failing = results.filter((r) => r.errors > 0 || r.score > maxScore);
   if (failing.length && !o.warn) process.exit(1);
 }

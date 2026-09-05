@@ -64,7 +64,34 @@ exits 1 when any file has an error-severity finding or a score above `--max-scor
 Twenty rules. Most come from the Wikipedia guideline
 [Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing),
 written by editors who review thousands of machine-written edits; the two marked "house"
-are ours. Run `npx ai-slop-linter --rules` for the same list from the binary.
+are ours. Run `npx ai-slop-linter --rules` for the same list from the binary, and
+`npx ai-slop-linter --explain <rule>` for one rule in full: why the pattern reads as
+machine-made, a line that trips it, the same line rewritten, and the case where you should
+switch the rule off instead of obeying it. Every finding in the text output ends with the
+command for the rule that fired.
+
+```
+$ slop --explain ing-tail
+ing-tail  warning  Present-participle tail adding significance
+source: Wikipedia, Signs of AI writing: Superficial analyses
+
+Why
+  The tail attaches a claim of significance to a fact already stated, without adding a
+  second fact. It is the cheapest way to make a sentence sound like a conclusion.
+
+Instead of
+  We shipped the fix on Friday, underscoring the team's commitment to quality.
+
+Write
+  We shipped the fix on Friday. The next release is on Tuesday.
+
+Ignore it when
+  The tail states a real consequence with its own detail, and the sentence would be
+  incomplete without it.
+```
+
+The tests check that every rule carries this material and that the "instead of" line
+actually trips the rule it illustrates.
 
 | rule | severity | what it catches | fix |
 |---|---|---|---|

@@ -14,6 +14,14 @@ export const dashes: Rule = {
   title: "Em dash or en dash used as a dash",
   severity: "error",
   source: WIKI,
+  why:
+    "Models punctuate with the em dash far more often than most writers do, and the rest of a repository almost never contains one, so a single dash reads as text that arrived from somewhere else.",
+  example: {
+    before: "Rates rose \u2014 sharply \u2014 in May.",
+    after: "Rates rose sharply in May.",
+  },
+  ignoreWhen:
+    "You are quoting a source that uses dashes, or the dash is your own long-standing habit and the rest of the repository agrees with it.",
   check(doc: Doc): Finding[] {
     const em = scan(
       doc,

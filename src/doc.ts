@@ -43,6 +43,12 @@ export interface Rule {
   severity: Severity;
   /** Where the pattern comes from: a section of Wikipedia's "Signs of AI writing" or "house". */
   source: string;
+  /** Why the pattern reads as machine-made, in a sentence or two. Printed by --explain. */
+  why: string;
+  /** A line that trips the rule and the same line rewritten. Both are checked by the tests. */
+  example: { before: string; after: string };
+  /** The case where a maintainer should switch this rule off rather than obey it. */
+  ignoreWhen: string;
   check(doc: Doc): Finding[];
 }
 

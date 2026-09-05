@@ -7,6 +7,14 @@ export const boldLabel: Rule = {
   title: "Bold mini-heading in a list item",
   severity: "warning",
   source: "Wikipedia, Signs of AI writing: Excessive use of boldface",
+  why:
+    "A bold label and a colon on every item turns a list into a form. It is the most recognisable shape in generated documentation, and readers skim past it.",
+  example: {
+    before: "- **Fast:** the parser runs in one pass.\n",
+    after: "- The parser runs in one pass.\n",
+  },
+  ignoreWhen:
+    "The list is a glossary or an options table, where the label is the term being defined.",
   check(doc) {
     return scan(doc, boldLabel, /^[ \t]*(?:[-*+]|\d+\.)\s+\*\*[^*\n]{1,60}?:?\*\*:?\s/gm, () => "bold label with a colon; write the item as a sentence");
   },
@@ -20,6 +28,14 @@ export const titleCase: Rule = {
   title: "Title Case heading",
   severity: "info",
   source: "Wikipedia, Signs of AI writing: Title case headings",
+  why:
+    "Title Case on every heading is a house style almost no repository uses, and it is the default a model reaches for.",
+  example: {
+    before: "## Getting Started With The Parser",
+    after: "## Getting started with the parser",
+  },
+  ignoreWhen:
+    "The project's style guide asks for title case; switch the rule off once in .slop.json.",
   check(doc) {
     const out: Finding[] = [];
     for (const m of doc.masked.matchAll(/^#{1,6}[ \t]+([^\n]+)$/gm)) {
@@ -44,6 +60,14 @@ export const emoji: Rule = {
   title: "Emoji as decoration",
   severity: "warning",
   source: "Wikipedia, Signs of AI writing: Emojis",
+  why:
+    "Emoji on headings and list markers are applied uniformly as decoration rather than for meaning, and they read badly in terminals and screen readers.",
+  example: {
+    before: "## \ud83d\ude80 Getting started",
+    after: "## Getting started",
+  },
+  ignoreWhen:
+    "The emoji is the content, such as documentation of which emoji a command prints.",
   check(doc) {
     return scan(doc, emoji, /^(?:#{1,6}[ \t]+|[ \t]*(?:[-*+]|\d+\.)[ \t]+)(?:\*\*)?[\p{Extended_Pictographic}✅✔❌⭐]/gmu, () => "emoji decorating a heading or list item; remove it");
   },
@@ -55,6 +79,14 @@ export const curlyQuotes: Rule = {
   title: "Curly quotation marks",
   severity: "info",
   source: "Wikipedia, Signs of AI writing: Curly quotation marks",
+  why:
+    "Curly marks arrive when text is pasted out of an interface that substitutes them. The rule fires only on a file that mixes them with straight marks, because a file that uses them throughout made a typographic choice.",
+  example: {
+    before: "The flag is \"--fix\" and it's safe. The model said \u201cthis is fine\u201d.",
+    after: "The flag is \"--fix\" and it's safe. The model said \"this is fine\".",
+  },
+  ignoreWhen:
+    "The file is typeset prose that uses curly marks everywhere, in which case the rule already says nothing.",
   check(doc) {
     // A document that never uses a straight mark chose its typography; flagging it
     // would report every line of a typeset book. The tell is the mixture, which is
@@ -70,6 +102,14 @@ export const hyphenDensity: Rule = {
   title: "Hyphenated compounds everywhere",
   severity: "info",
   source: "Wikipedia, Signs of AI writing: Overuse of hyphenated compounds",
+  why:
+    "A high rate of hyphenated compounds is the signature of a model reaching for adjectives. Most of them lose the hyphen when they follow the noun.",
+  example: {
+    before: "This production-ready service is a well-tested, high-performance component built for cloud-native deployments. The state-of-the-art pipeline offers real-time processing with best-in-class reliability, and the developer-friendly API keeps the learning curve short. Teams get end-to-end visibility across every request, with fine-grained control over retries and a battle-tested storage layer underneath. The system is designed for large-scale workloads and keeps latency low under heavy load, which makes it a good fit for data-intensive applications that need predictable behaviour during traffic spikes and long-running background jobs that would otherwise saturate the queue for hours.",
+    after: "This service is ready for production. It is well tested, it is fast, and it was built to run in a container. The pipeline processes records as they arrive and its reliability is measured in the benchmark below. The API is small enough to learn in an afternoon. Teams see every request end to end, control retries in detail, and store results in a layer that has run in production for two years. The system handles large workloads and keeps latency low under heavy load, which suits applications that move a lot of data and need predictable behaviour during traffic spikes.",
+  },
+  ignoreWhen:
+    "The compounds are established technical terms in your domain and dropping the hyphen would change the meaning.",
   check(doc) {
     const matches = [...doc.masked.matchAll(/\b[a-z]+-[a-z]+\b/gi)];
     if (doc.words < 100) return [];

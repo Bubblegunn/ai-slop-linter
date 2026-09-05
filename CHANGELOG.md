@@ -2,6 +2,8 @@
 
 ## 0.1.0 (unreleased)
 
+`--explain <rule>` prints one rule in full: why the pattern reads as machine-made, a line that trips it, the same line rewritten, and the case where a maintainer should switch it off. Every rule carries the material, and a test asserts that each rule's own example trips it. The text output names the command for the first rule that fired, on stderr so the machine-readable format is untouched.
+
 A measured corpus in `bench/`: five public-domain texts written before any language model (Austen, Douglass, Darwin, PEP 8, PEP 257) and five pieces of unedited model output. `npm run bench` writes `bench/PRECISION.md` with the rate per rule in each corpus and lists every finding on the human side; CI fails when the committed table is stale. The human texts grade A or B, the model texts F.
 
 `curly-quotes` no longer fires on a document that uses curly marks throughout. It flagged all 92 lines of dialogue in an excerpt of *Pride and Prejudice* and nothing in the model corpus, because consistent curly marks are typography. It now reports only a file that mixes curly and straight marks, which is what pasting from a chat interface leaves.

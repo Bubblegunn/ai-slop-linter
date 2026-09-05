@@ -7,6 +7,14 @@ export const chatbot: Rule = {
   title: "Chatbot residue",
   severity: "error",
   source: "Wikipedia, Signs of AI writing: Communication intended for the user",
+  why:
+    "These sentences address the person who asked for the text. A file that has to stand on its own has nobody to address, so they are interface left in the document.",
+  example: {
+    before: "The parser now accepts empty files. I hope this helps!",
+    after: "The parser now accepts empty files.",
+  },
+  ignoreWhen:
+    "The document is a transcript and the line is quoted as evidence of what was said.",
   check(doc) {
     return scan(
       doc,
@@ -23,6 +31,14 @@ export const announcing: Rule = {
   title: "Announcing instead of saying",
   severity: "warning",
   source: "house rule, after Wikipedia: Filler phrases",
+  why:
+    "The sentence tells the reader a point is coming instead of making it. Deleting it moves the point one line earlier and costs nothing.",
+  example: {
+    before: "Let's dive into the configuration options.",
+    after: "Configuration is read from .slop.json first, then from the flags.",
+  },
+  ignoreWhen:
+    "The document is a talk script, where a spoken transition does real work for a listener.",
   check(doc) {
     return scan(
       doc,
@@ -39,6 +55,14 @@ export const closer: Rule = {
   title: "Generic positive ending",
   severity: "warning",
   source: "Wikipedia, Signs of AI writing: Generic conclusions",
+  why:
+    "A closing line of vague optimism is what appears when there is nothing left to say. Ending on the last concrete fact is shorter and stronger.",
+  example: {
+    before: "Exciting times ahead for the project!",
+    after: "The next release is due in October.",
+  },
+  ignoreWhen:
+    "You are quoting an announcement that ended that way.",
   check(doc) {
     return scan(
       doc,
@@ -55,6 +79,14 @@ export const challenges: Rule = {
   title: "Formulaic challenges or outlook section",
   severity: "info",
   source: "Wikipedia, Signs of AI writing: Challenges and future prospects",
+  why:
+    "The section fills a shape rather than reporting anything. What survives it is the dated facts, and those belong in the sections that already exist.",
+  example: {
+    before: "## Future Outlook\n\nDespite these challenges, the project continues to thrive.\n",
+    after: "The parser fails on files above 2 GB; issue 41 tracks it.\n",
+  },
+  ignoreWhen:
+    "The section carries dated, sourced facts that a reader asked for.",
   check(doc) {
     return scan(
       doc,
@@ -71,6 +103,14 @@ export const vagueSource: Rule = {
   title: "Vague or invented source",
   severity: "warning",
   source: "Wikipedia, Signs of AI writing: Vague attributions",
+  why:
+    "An attribution with no name cannot be checked, and it is the shape that appears when there is no citation to give.",
+  example: {
+    before: "Studies show that shorter commits are reviewed faster.",
+    after: "Cohen measured review time on 1,400 pull requests in 2019 and found shorter commits were reviewed faster.",
+  },
+  ignoreWhen:
+    "The same line already carries a link or a numbered citation, in which case the rule stays quiet by itself.",
   check(doc) {
     return scan(
       doc,
@@ -92,6 +132,14 @@ export const cutoff: Rule = {
   title: "Knowledge-cutoff disclaimer",
   severity: "error",
   source: "Wikipedia, Signs of AI writing: Knowledge-cutoff disclaimers",
+  why:
+    "A hedge about training data describes the writer's tooling rather than the subject, and it is stale the moment the file is committed.",
+  example: {
+    before: "As of my last update, the library had no Windows build.",
+    after: "On 4 September 2026 the library had no Windows build.",
+  },
+  ignoreWhen:
+    "You are documenting model behaviour itself and the disclaimer is the subject.",
   check(doc) {
     return scan(
       doc,

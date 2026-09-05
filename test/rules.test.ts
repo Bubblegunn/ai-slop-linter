@@ -137,3 +137,15 @@ test("masking is linear: thousands of unclosed openers do not make prepare quadr
   assert.ok(!m.includes("https://x.y/z") && !m.includes("note") && !m.includes("<b>") && !m.includes("code"));
   assert.ok(m.includes("the guide") && m.includes("bold"));
 });
+
+test("every rule carries the material --explain prints", () => {
+  for (const r of rules) {
+    assert.ok(r.why && r.why.length > 40, `${r.id} has no why`);
+    assert.ok(r.example?.before && r.example.after, `${r.id} has no before/after example`);
+    assert.notEqual(r.example.before, r.example.after, `${r.id} example does not change`);
+    assert.ok(r.ignoreWhen && r.ignoreWhen.length > 20, `${r.id} does not say when to ignore it`);
+    // The example must actually trip the rule it illustrates.
+    const ids = new Set(lintText("example.md", r.example.before).findings.map((f) => f.rule));
+    assert.ok(ids.has(r.id), `${r.id}: its own before example does not trip it`);
+  }
+});

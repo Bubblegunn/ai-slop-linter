@@ -7,6 +7,14 @@ export const aiVocabulary: Rule = {
   title: "Overused AI vocabulary",
   severity: "warning",
   source: "Wikipedia, Signs of AI writing: Vocabulary",
+  why:
+    "Each of these words appears in model output at many times the rate it appears in human writing. Any one of them is fine; a cluster is what a reader notices.",
+  example: {
+    before: "We delve into the intricate tapestry of the vibrant ecosystem.",
+    after: "We look at how the plugins fit together.",
+  },
+  ignoreWhen:
+    "The word is the precise technical term for the thing, such as a robust statistic or an actual tapestry.",
   check(doc) {
     return scan(
       doc,
@@ -26,6 +34,14 @@ export const sales: Rule = {
   title: "Sales language",
   severity: "warning",
   source: "Wikipedia, Signs of AI writing: Promotional language",
+  why:
+    "Advertising language makes a claim the document does not support, and in a README it warns the reader that no numbers are coming.",
+  example: {
+    before: "This state-of-the-art library offers unparalleled performance.",
+    after: "The library parses 40 MB per second on the benchmark in bench/.",
+  },
+  ignoreWhen:
+    "You are quoting marketing copy, or the phrase is part of a registered product name.",
   check(doc) {
     return scan(
       doc,
@@ -55,6 +71,14 @@ export const filler: Rule = {
   title: "Filler phrase",
   severity: "info",
   source: "Wikipedia, Signs of AI writing: Filler phrases",
+  why:
+    "Every phrase in this list has a shorter form with the same meaning. They survive because they pad a sentence to a comfortable length.",
+  example: {
+    before: "In order to run the tests, install the dependencies.",
+    after: "To run the tests, install the dependencies.",
+  },
+  ignoreWhen:
+    "You are quoting text you are not free to alter.",
   check(doc) {
     return FILLERS.flatMap(([re, to]) =>
       scan(doc, filler, re, (m) => (to ? `"${m[0]}": say "${to}"` : `"${m[0]}": cut it`), (m) => {
