@@ -107,3 +107,16 @@ test("prepare counts words on the masked text and records ignore directives", ()
   assert.equal(d.words, 3);
   assert.deepEqual([...d.ignoredRules.keys()], ["foo", "bar"]);
 });
+
+test("masking is linear: thousands of unclosed openers do not make prepare quadratic", () => {
+  const hostile = "<!-- ".repeat(20000) + "](" .repeat(20000) + "<a ".repeat(20000);
+  const t0 = performance.now();
+  const d = prepare("h.md", hostile);
+  assert.ok(performance.now() - t0 < 1000, "prepare took too long on crafted input");
+  assert.equal(d.masked.length, hostile.length);
+  const normal = "See [the guide](https://x.y/z) and <b>bold</b> <!-- note --> plus `code`.";
+  const m = prepare("n.md", normal).masked;
+  assert.equal(m.length, normal.length);
+  assert.ok(!m.includes("https://x.y/z") && !m.includes("note") && !m.includes("<b>") && !m.includes("code"));
+  assert.ok(m.includes("the guide") && m.includes("bold"));
+});

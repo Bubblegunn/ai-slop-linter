@@ -48,6 +48,36 @@ export interface Rule {
 
 const blank = (s: string) => s.replace(/[^\n]/g, " ");
 
+/**
+ * Spans `[start, end)` of `open`...`close` pairs found by index search, so a file
+ * with thousands of unclosed openers costs one pass instead of one scan per opener
+ * (the regex form was quadratic on crafted input). A `stop` character between the
+ * two ends the candidate without a match and the search resumes after the opener;
+ * an `opener` test rejects a candidate at its first character.
+ */
+function delimited(s: string, open: string, close: string, stop?: RegExp, opener?: RegExp): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  let from = 0;
+  for (;;) {
+    const start = s.indexOf(open, from);
+    if (start < 0) break;
+    if (opener && !opener.test(s.slice(start, start + 3))) {
+      from = start + 1;
+      continue;
+    }
+    const end = s.indexOf(close, start + open.length);
+    if (end < 0) break;
+    const inner = s.slice(start + open.length, end);
+    if (stop && stop.test(inner)) {
+      from = start + open.length;
+      continue;
+    }
+    out.push([start, end + close.length]);
+    from = end + close.length;
+  }
+  return out;
+}
+
 /** Mask a region of `masked` in place (string surgery keeps the length). */
 function mask(masked: string, start: number, end: number): string {
   return masked.slice(0, start) + blank(masked.slice(start, end)) + masked.slice(end);
@@ -63,14 +93,14 @@ export function prepare(path: string, text: string): Doc {
     masked = mask(masked, m.index!, m.index! + m[0].length);
   }
   // HTML comments (kept readable for the directive scan below, masked for rules).
-  for (const m of text.matchAll(/<!--[\s\S]*?-->/g)) masked = mask(masked, m.index!, m.index! + m[0].length);
+  for (const [s, e] of delimited(text, "<!--", "-->")) masked = mask(masked, s, e);
   // Inline code.
   for (const m of masked.matchAll(/`[^`\n]*`/g)) masked = mask(masked, m.index!, m.index! + m[0].length);
   // Markdown link targets and bare URLs.
-  for (const m of masked.matchAll(/\]\([^)\s]*\)/g)) masked = mask(masked, m.index! + 2, m.index! + m[0].length - 1);
+  for (const [s, e] of delimited(masked, "](", ")", /\s/)) masked = mask(masked, s + 2, e - 1);
   for (const m of masked.matchAll(/https?:\/\/[^\s)>\]]+/g)) masked = mask(masked, m.index!, m.index! + m[0].length);
   // HTML tags.
-  for (const m of masked.matchAll(/<\/?[a-zA-Z][^>\n]*>/g)) masked = mask(masked, m.index!, m.index! + m[0].length);
+  for (const [s, e] of delimited(masked, "<", ">", /\n/, /^<\/?[a-zA-Z]/)) masked = mask(masked, s, e);
 
   const lineStarts = [0];
   for (let i = 0; i < text.length; i++) if (text[i] === "\n") lineStarts.push(i + 1);
