@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.2 (unreleased)
+## 0.1.2 (2026-09-05)
 
 `--history` reads your own commit messages back over time: weighted tells per 1,000 words per month, quarter or year, with the most common rule in each period. It defaults to the address in the repository's own git config, so the thing it shows you first is your own writing. Trailers are not counted, because a `Co-Authored-By` line is a template rather than prose. There is no grade and no exit code: a bar comparing one period against another describes writing over time, and a lone period gets no bar at all, because a bar is a comparison. `--author`, `--by month|quarter|year` and `--since` narrow it; `--format json` gives the periods for charting.
 
