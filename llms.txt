@@ -12,6 +12,7 @@ npm: https://www.npmjs.com/package/ai-slop-linter
 - [Skill](skills/ai-slop-linter/SKILL.md): the rules in prose, for an agent that has no shell
 - [API](src/index.ts): lintText, fixText, rules, gradeFor, prepare
 - [Contributing](CONTRIBUTING.md): tests, adding a rule, severities, releasing
+- [Rule precision](bench/PRECISION.md): generated; the rate of each rule on a pre-2021 human corpus next to unedited model output, and every finding on the human side
 
 ## Facts an agent should keep straight
 
@@ -22,3 +23,7 @@ npm: https://www.npmjs.com/package/ai-slop-linter
 - Fixes only swap characters or delete filler; nothing that changes meaning is auto-fixed.
 - `--format` is text, json, github (annotations plus an error line per failing text) or markdown (the table the Action posts as its one review comment).
 - A baseline (`--baseline-write`, `--baseline`) keys findings by file, rule and sentence, not line number; only findings outside it fail.
+- `--explain <rule>` prints why the pattern reads as machine-made, a line that trips the rule, the same line rewritten, and when to switch the rule off. Every rule carries that material and a test checks its example still trips it.
+- `.slop.json` takes `overrides`: `{ files, ignore, only, maxScore }` applied in order to a matching path, later entries winning. `--only` runs named rules alone; `--skip` is another spelling of `--ignore`. Unknown rule ids are rejected.
+- `--init` writes `.slop.json`, `--init action` the pull request workflow, `--init hook` the commit-msg hook; it never overwrites an existing file.
+- Measured, not asserted: on `bench/corpus`, five public-domain texts written before any language model grade A or B and five pieces of model output grade F. The numbers are rates, not detection accuracy, and the tool never emits a probability.

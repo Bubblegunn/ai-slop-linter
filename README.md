@@ -316,15 +316,16 @@ is a line number and a reason rather than a verdict about a person.
 
 ## Run on our own writing
 
-The tool on the four READMEs its author maintains and on the eleven essays on the author's site,
-run on 5 September 2026 (`npx ai-slop-linter <file> --warn`):
+The tool on the five READMEs its author maintains and on the eleven essays on the author's
+site, re-run on 5 September 2026 with the current rules (`npx ai-slop-linter <file> --warn`):
 
 | text | words | grade | findings |
 |---|---|---|---|
-| [workproof](https://github.com/Bubblegunn/workproof) README | 1,105 | A (0) | none |
-| [proactive-gate](https://github.com/Bubblegunn/proactive-gate) README | 1,213 | A (0) | none |
-| [surviving-lines](https://github.com/Bubblegunn/surviving-lines) README | 712 | A (0) | none; the first run found 2 bold labels in a list, fixed the same day |
-| [product-engineer](https://github.com/Bubblegunn/product-engineer) README | 865 | A (0) | none; the first run scored C (8.7) for 7 bold labels in the rule list |
+| [workproof](https://github.com/Bubblegunn/workproof) README | 2,315 | A (0) | none |
+| [proactive-gate](https://github.com/Bubblegunn/proactive-gate) README | 2,578 | A (0) | none |
+| [surviving-lines](https://github.com/Bubblegunn/surviving-lines) README | 1,010 | A (0) | none; the first run found 2 bold labels in a list, fixed the same day |
+| [product-engineer](https://github.com/Bubblegunn/product-engineer) README | 894 | A (0) | none; the first run scored C (8.7) for 7 bold labels in the rule list |
+| this README | 1,855 | A (0) | none |
 | 8 of 11 portfolio essays | 856 to 1,849 each | A (0) | none |
 | the other 3 essays | 871 to 1,601 | A (0.4 to 1.1) | `state-of-the-art` once, `elevated` once, `in order to` twice |
 
@@ -332,8 +333,11 @@ The C was real: the first product-engineer README listed its seven rules as
 `**Name:** text` bullets, exactly the pattern the rule flags. Later the same day that
 README was rewritten to show the tool before explaining it, and the rule list became
 plain sentences on the way; it was not edited to please the linter, and the row keeps
-the earlier score so the table stays a record of runs, not a scoreboard. The linter runs
-on this repository's own Markdown in CI with `maxScore` 3.
+the earlier score so the table stays a record of runs, not a scoreboard. The three essays
+still carry their findings, because a sentence is worth more than a clean score. The linter
+runs on this repository's own Markdown in CI with `maxScore` 3, and it has caught two of its
+own rules that way: the curly quotes that flagged Jane Austen, and a `filler` match on
+"applied in order to any file", which is not the padded infinitive the rule is looking for.
 
 ## What it cannot show
 

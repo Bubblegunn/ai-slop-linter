@@ -81,6 +81,27 @@ kendi metnini lint etmesini sağlar:
 npx skills add Bubblegunn/ai-slop-linter
 ```
 
+## Ölçüm
+
+Bir linter boş yere uyarırsa kaldırılır, o yüzden yanlış uyarı maliyeti iddia değil ölçüm
+olarak duruyor. `bench/corpus` içinde on metin var: dil modelleri ortaya çıkmadan önce yazılmış
+beş metin (Austen 1813, Douglass 1845, Darwin 1859, PEP 8 ve PEP 257) ve düzeltilmemiş beş model
+çıktısı. `npm run bench` her kuralı ikisinin üzerinde çalıştırıp
+[`bench/PRECISION.md`](bench/PRECISION.md) dosyasını yazar; tablo eskirse CI kırılır.
+
+İnsan metinleri A veya B alıyor, model çıktıları F. İlk koşu bir kuralın hatalı olduğunu
+gösterdi: `curly-quotes` *Pride and Prejudice* bölümünde 92 satır işaretliyordu, model
+çıktısında ise hiç. Kıvrık tırnak tipografidir; asıl iz, dosyanın kıvrık ve düz tırnağı
+karıştırmasıdır. Kural artık yalnızca karışık dosyada konuşuyor.
+
+## Bunu neden yaptığını anlat
+
+`slop --explain <kural>` bir kuralı dört parçayla anlatır: neden makine izi sayılır, kuralı
+tetikleyen bir satır, aynı satırın düzeltilmiş hali ve kuralı kapatmanın doğru olduğu durum.
+`slop --init` başlangıç `.slop.json` dosyasını, `--init action` CI tanımını, `--init hook`
+commit kancasını yazar. `.slop.json` içindeki `overrides` ile her yol için ayrı kural ve puan
+sınırı verilebilir.
+
 ## Kendi yazılarımızda
 
 5 Eylül 2026'da yazarın dört README'si ve sitesindeki on bir denemede çalıştırıldı:
