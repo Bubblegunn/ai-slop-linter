@@ -492,17 +492,18 @@ is a line number and a reason rather than a verdict about a person.
 ## Run on our own writing
 
 The tool on the five READMEs its author maintains and on the eleven essays on the author's
-site, re-run on 5 September 2026 with the current rules (`npx ai-slop-linter <file> --warn`):
+site, re-run at version 0.1.4 on 5 September 2026 (`npx ai-slop-linter <file> --warn`). The
+word counts move as the documents grow, so the version and the date are part of the claim:
 
 | text | words | grade | findings |
 |---|---|---|---|
-| [workproof](https://github.com/Bubblegunn/workproof) README | 2,315 | A (0) | none |
-| [proactive-gate](https://github.com/Bubblegunn/proactive-gate) README | 2,578 | A (0) | none |
-| [surviving-lines](https://github.com/Bubblegunn/surviving-lines) README | 1,010 | A (0) | none; the first run found 2 bold labels in a list, fixed the same day |
-| [product-engineer](https://github.com/Bubblegunn/product-engineer) README | 894 | A (0) | none; the first run scored C (8.7) for 7 bold labels in the rule list |
-| this README | 1,949 | A (0) | none |
-| 8 of 11 portfolio essays | 856 to 1,849 each | A (0) | none |
-| the other 3 essays | 871 to 1,601 | A (0.4 to 1.1) | `state-of-the-art` once, `elevated` once, `in order to` twice |
+| [proactive-gate](https://github.com/Bubblegunn/proactive-gate) README | 4,871 | A (0) | none |
+| [workproof](https://github.com/Bubblegunn/workproof) README | 4,121 | A (0) | none |
+| this README | 3,647 | A (0) | none |
+| [surviving-lines](https://github.com/Bubblegunn/surviving-lines) README | 2,002 | A (0) | none; the first run found 2 bold labels in a list, fixed the same day |
+| [product-engineer](https://github.com/Bubblegunn/product-engineer) README | 1,755 | A (0) | none; the first run scored C (8.7) for 7 bold labels in the rule list |
+| 8 of 11 portfolio essays | 854 to 1,849 each | A (0) | none |
+| the other 3 essays | 866 to 1,601 | A (0.4 to 1.2) | `state-of-the-art` once, `elevated` once, `in order to` twice |
 
 The C was real: the first product-engineer README listed its seven rules as
 `**Name:** text` bullets, exactly the pattern the rule flags. Later the same day that
