@@ -78,5 +78,15 @@
     "typescript": "^7.0.2"
   },
   "main": "./dist/src/index.js",
-  "types": "./dist/src/index.d.ts"
+  "types": "./dist/src/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "commitlint": [
+        "./integrations/commitlint/index.d.mts"
+      ],
+      "commitlint/config": [
+        "./integrations/commitlint/config.d.mts"
+      ]
+    }
+  }
 }
