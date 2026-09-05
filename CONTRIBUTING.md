@@ -23,6 +23,36 @@ Rules must name a source. Most come from Wikipedia's [Signs of AI writing](https
 
 A fix (`Finding.fix`) is only allowed when applying it cannot change meaning: a character swap, a deletion of a phrase that carries no information. Anything that needs a sentence rewritten stays a finding without a fix.
 
+## Adding a language
+
+The vocabulary rules (`ai-vocabulary`, `sales`, `filler`, `chatbot`, `closer`, `announcing`) are
+English word lists. The structural rules (`dash`, `curly-quotes`, `bold-label`, `emoji`,
+`title-case-heading`, `hyphen-density`) already work in any language.
+
+1. Bring the source first, in the issue, before writing any rules. Wikipedia's *Signs of AI
+   writing* exists in German, Finnish, French, Hebrew, Russian, Thai and Chinese; those are
+   sourceable from the same authority the English rules use. There is no equivalent page in
+   Turkish, Japanese, Korean, Hindi or Arabic, so a pack in one of those needs a different
+   published source: a publisher or newspaper style guide, a university writing guide, or an
+   academic paper on machine-generated text in that language. A list assembled from your own
+   reading cannot go in. That constraint applies to the maintainer too.
+2. Write `src/rules/<lang>.ts` exporting the rules, each with an id prefixed by the language,
+   so `zh/chatbot` and never `chatbot`.
+3. Register it in `languageRules` in `src/index.ts`, and have your test call
+   `checkLanguagePack("<lang>", pack)` and assert it returns no problems.
+4. Add a fixture, `test/fixtures/sloppy.<lang>.md`, with one sentence per rule, and a test that
+   the rules fire there and that the file is clean when the language is not switched on.
+5. Add a document to `bench/scripts/` in that language and one to `bench/corpus/human/` written
+   before 2021, then run `npm run bench`. If a rule fires on the older text, that is a finding
+   to publish in the table, not to tune away. Detectors are known to misjudge writing by people
+   who are not writing in their first language ([Liang et al.,
+   2023](https://www.cell.com/patterns/fulltext/S2666-3899(23)00130-7)), which is why a pack
+   without a clean older text is not ready.
+6. Add the rows to the rule table in `README.md`, with sources.
+
+Nothing loads a pack unless it is asked for, with `--languages <tag>` or `"languages"` in
+`.slop.json`, so an English-only repository can never see a finding from another language's list.
+
 ## Severity
 
 - `error`: a tell that is always wrong in shipped text and has no honest use (em dashes in prose, chatbot residue). Fails the run.

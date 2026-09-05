@@ -24,6 +24,7 @@ wrote it; it shows the tells, with line numbers, and fixes the safe ones.
   --format <f>          text (default), json, github (workflow annotations) or markdown (a table to paste)
   --ignore <rule,...>   skip rules by id (--skip is the same flag)
   --only <rule,...>     run only these rules
+  --languages <tag,...> rule packs to switch on besides English
   --max-score <n>       fail when a file's score is above n (default from .slop.json, else 10)
   --warn                never exit 1; report only
   --baseline            fail only on findings not listed in the baseline file
@@ -47,6 +48,7 @@ interface Options {
   format: "text" | "json" | "github" | "markdown";
   ignore: string[];
   only: string[];
+  languages: string[];
   maxScore: number | undefined;
   warn: boolean;
   baseline: boolean;
@@ -59,7 +61,7 @@ interface Options {
 }
 
 export function parse(argv: string[]): Options {
-  const o: Options = { targets: [], commit: false, fix: false, format: "text", ignore: [], only: [], maxScore: undefined, warn: false, baseline: false, baselineWrite: false, cwd: process.cwd(), listRules: false };
+  const o: Options = { targets: [], commit: false, fix: false, format: "text", ignore: [], only: [], languages: [], maxScore: undefined, warn: false, baseline: false, baselineWrite: false, cwd: process.cwd(), listRules: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     const next = () => {
@@ -77,6 +79,7 @@ export function parse(argv: string[]): Options {
       o.format = f;
     } else if (a === "--ignore" || a === "--skip") o.ignore.push(...next().split(",").map((s) => s.trim()).filter(Boolean));
     else if (a === "--only") o.only.push(...next().split(",").map((s) => s.trim()).filter(Boolean));
+    else if (a === "--languages") o.languages.push(...next().split(",").map((s) => s.trim()).filter(Boolean));
     else if (a === "--max-score") o.maxScore = Number(next());
     else if (a === "--warn") o.warn = true;
     else if (a === "--baseline") o.baseline = true;
@@ -115,6 +118,8 @@ interface Override extends Rules {
 
 interface Config extends Rules {
   include?: string[];
+  /** Language rule packs to switch on besides English. */
+  languages?: string[];
   baseline?: string;
   /** Applied in order to a file that matches; a later entry wins over an earlier one. */
   overrides?: Override[];
@@ -387,7 +392,8 @@ async function main() {
     // that stops a fragment being graded would leave every one of them ungraded. There the
     // question is whether the text carries a tell, not how dense the tells are.
     const short = input.file === null && input.name !== "stdin";
-    const opts = { ignore: [...per.ignore, ...o.ignore], only: o.only.length ? o.only : per.only, ...(short ? { floor: 0 } : {}) };
+    const languages = o.languages.length ? o.languages : (config.languages ?? []);
+    const opts = { ignore: [...per.ignore, ...o.ignore], only: o.only.length ? o.only : per.only, languages, ...(short ? { floor: 0 } : {}) };
     limits.set(display, o.maxScore ?? per.maxScore ?? 10);
     if (o.fix && input.file) {
       const r = fixText(display, input.text, opts);

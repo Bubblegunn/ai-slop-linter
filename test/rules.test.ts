@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { lintText, fixText, rules, gradeFor, prepare } from "../src/index.js";
+import { lintText, fixText, rules, gradeFor, prepare, rulesFor, languageRules, checkLanguagePack } from "../src/index.js";
 
 const fixture = (name: string) => readFileSync(join(import.meta.dirname, "..", "..", "test", "fixtures", name), "utf8");
 const sloppy = fixture("sloppy.md");
@@ -65,6 +65,44 @@ test("word count: a word is a word in every script", () => {
 
   // Latin and Japanese mixed in one line: both halves are counted.
   assert.ok(count(`the CLI 使い方 guide`) >= 4);
+});
+
+test("language packs are off unless asked for, and a pack has to be well formed", () => {
+  // No pack ships yet; issue #1 tracks the first. The mechanism is tested with a stand-in so
+  // the infrastructure is proven without inventing rules for a language nobody sourced.
+  assert.deepEqual(Object.keys(languageRules), []);
+  assert.deepEqual(rulesFor(), rules, "English is the whole set when nothing is asked for");
+  assert.throws(() => rulesFor(["zz"]), /no rule pack for "zz"/);
+
+  const stand_in = {
+    id: "zz/greeting",
+    title: "Greeting residue",
+    severity: "warning" as const,
+    source: "A style guide that would be named here",
+    why: "why",
+    example: { before: "b", after: "a" },
+    ignoreWhen: "when",
+    check: () => [],
+  };
+  assert.deepEqual(checkLanguagePack("zz", [stand_in]), []);
+  assert.deepEqual(checkLanguagePack("zz", []), ["zz: the pack is empty"]);
+  assert.deepEqual(checkLanguagePack("zz", [{ ...stand_in, id: "greeting" }]), [
+    "greeting: a rule in the zz pack needs the id zz/greeting",
+  ]);
+  assert.deepEqual(checkLanguagePack("zz", [{ ...stand_in, source: "  " }]), ["zz/greeting: every rule carries a source"]);
+  assert.deepEqual(checkLanguagePack("zz", [{ ...stand_in, id: "dash" }]), [
+    "dash: a rule in the zz pack needs the id zz/dash",
+    "dash: an English rule already has this id",
+  ]);
+
+  try {
+    languageRules.zz = [stand_in];
+    assert.equal(rulesFor(["zz"]).length, rules.length + 1);
+    // Asking for the pack does not change what an English-only run sees.
+    assert.deepEqual(rulesFor(), rules);
+  } finally {
+    delete languageRules.zz;
+  }
 });
 
 test("dash rule: a nested list marker is a bullet, not a dash", () => {

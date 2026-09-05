@@ -181,7 +181,9 @@ later entry wins:
 
 On the command line, `--only dash,chatbot` runs those rules and nothing else, `--ignore`
 (also spelled `--skip`) drops rules, and both reject a rule id that does not exist rather than
-silently doing nothing. Inside a file, `<!-- slop-ignore-next-line dash -->` covers one line
+silently doing nothing. `--languages <tag>`, or `"languages"` in `.slop.json`, switches on a
+rule pack for a language other than English; asking for one that does not exist is an error
+rather than a quiet clean run. Inside a file, `<!-- slop-ignore-next-line dash -->` covers one line
 and `<!-- slop-ignore dash, emoji -->` covers the rest of the file.
 
 ## What the rules never see
@@ -391,9 +393,12 @@ own rules that way: the curly quotes that flagged Jane Austen, and a `filler` ma
   avoids every listed phrase. Text that passes can still be empty.
 - Style outside the list. Twenty rules cover the patterns editors flag most; a
   writer with a different tell passes. Add a rule when you find one.
-- Other languages. The vocabulary rules are English. The structural ones (dashes,
-  quotes, bold labels, emoji, headings) work anywhere. Rule sets for a second language
-  are on the [roadmap](ROADMAP.md).
+- Other languages. The vocabulary rules are English; the structural ones (dashes,
+  quotes, bold labels, emoji, headings) work anywhere. The machinery for a second rule
+  set is in place and switched off: `--languages` and `checkLanguagePack` are there, and
+  no pack ships yet. What holds one up is a source, not code, and there is no equivalent
+  of Wikipedia's Signs of AI writing in Turkish, Japanese, Korean, Hindi or Arabic.
+  See [CONTRIBUTING.md](CONTRIBUTING.md) and issue #1.
 
 ## Contributing
 

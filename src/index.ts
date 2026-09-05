@@ -33,6 +33,51 @@ export const rules: Rule[] = [
   hyphenDensity,
 ];
 
+/**
+ * Rule sets for languages other than English, keyed by the language tag used to switch them
+ * on. Empty until a pack lands: issue #1 tracks the first one, and the vocabulary rules are
+ * the ones that need translating, since the structural rules already work in any language.
+ *
+ * A pack is a file under `src/rules/<lang>.ts` exporting its rules, registered here. Every
+ * rule in it carries an id prefixed with its language, so `zh/chatbot` and never `chatbot`,
+ * and a source, the same requirement the English rules meet. Nothing loads a pack unless the
+ * language is asked for, so an English-only repository can never see a finding from one.
+ */
+export const languageRules: Record<string, Rule[]> = {};
+
+/**
+ * The English rules, plus the packs for any language asked for. Throws on a language with no
+ * pack rather than silently linting without it, because a repository that configured `zh` and
+ * got no Chinese findings would read that as a clean file.
+ */
+export function rulesFor(languages: readonly string[] = []): Rule[] {
+  const chosen: Rule[] = [...rules];
+  for (const lang of languages) {
+    const pack = languageRules[lang];
+    if (!pack) {
+      const known = Object.keys(languageRules);
+      throw new Error(`no rule pack for "${lang}" (${known.length ? `have: ${known.join(", ")}` : "none exist yet; see CONTRIBUTING.md"})`);
+    }
+    chosen.push(...pack);
+  }
+  return chosen;
+}
+
+/**
+ * What a pack has to satisfy before it is registered. Called by the pack's own test, so a
+ * contributor sees the requirement fail rather than reading it in a document.
+ */
+export function checkLanguagePack(lang: string, pack: readonly Rule[]): string[] {
+  const problems: string[] = [];
+  if (pack.length === 0) problems.push(`${lang}: the pack is empty`);
+  for (const rule of pack) {
+    if (!rule.id.startsWith(`${lang}/`)) problems.push(`${rule.id}: a rule in the ${lang} pack needs the id ${lang}/${rule.id}`);
+    if (!rule.source?.trim()) problems.push(`${rule.id}: every rule carries a source`);
+    if (rules.some((r) => r.id === rule.id)) problems.push(`${rule.id}: an English rule already has this id`);
+  }
+  return problems;
+}
+
 export const WEIGHTS: Record<Severity, number> = { error: 3, warning: 1, info: 0.3 };
 
 /** Grade thresholds on the weighted findings-per-thousand-words score. */
@@ -47,6 +92,8 @@ export interface LintOptions {
   ignore?: string[];
   /** When set, only these rule ids run; `ignore` still applies on top. */
   only?: string[];
+  /** Language packs to switch on, by tag. English is always on. */
+  languages?: readonly string[];
   /**
    * Words below which the document is not graded. Defaults to GRADE_FLOOR. A caller that
    * only ever sees short text, the commit-message paths, passes 0, because there the
@@ -87,7 +134,7 @@ export function lintDoc(doc: Doc, options: LintOptions = {}): LintResult {
   const ignore = new Set(options.ignore ?? []);
   const only = options.only?.length ? new Set(options.only) : undefined;
   const findings: Finding[] = [];
-  for (const rule of rules) {
+  for (const rule of rulesFor(options.languages)) {
     if (only && !only.has(rule.id)) continue;
     if (ignore.has(rule.id)) continue;
     for (const f of rule.check(doc)) if (!suppressed(doc, f)) findings.push(f);

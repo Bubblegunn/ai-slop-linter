@@ -24,6 +24,14 @@ flattered the score. Scripts that separate words are tokenised; Chinese, Japanes
 and the rest go through the platform's Unicode segmenter rather than a
 characters-per-word constant nobody measured.
 
+`--languages`, and `"languages"` in `.slop.json`, switch on a rule pack for a language
+other than English. No pack ships: the registry is empty, English is unchanged and always
+on, and asking for a language with no pack is an error rather than a quiet clean run.
+`checkLanguagePack` states what a pack has to satisfy, an id prefixed by its language and a
+source on every rule, and CONTRIBUTING.md records which languages can be sourced from the
+same authority the English rules use. Issue #1 tracks the first pack, and the rules in it
+are an outside contributor's to write.
+
 A directory argument lints the Markdown inside it, which is what running with no target
 does for the whole repository. It used to print `EISDIR: illegal operation on a directory,
 read`. A directory holding no Markdown now says so and exits 2.
