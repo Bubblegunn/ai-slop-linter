@@ -1,6 +1,6 @@
 {
   "name": "ai-slop-linter",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Lint prose for AI-writing tells. It does not guess who wrote it. It shows the tells.",
   "author": {
     "name": "Efe Genc",

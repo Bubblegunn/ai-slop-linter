@@ -1,6 +1,6 @@
 {
   "name": "ai-slop-linter",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Linter for AI-writing tells in commit messages, PR descriptions and docs. Rule-based, line numbers, safe fixes, GitHub Action, pre-commit hook, agent skill.",
   "keywords": [
     "ai-slop",
