@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>ai-slop-linter playground</title>
+<!--
+  One static page. It loads index.html, playground.js and the engine, and then makes no further
+  requests: no fonts, no analytics, no error reporting, no accounts, no storage. Your text is
+  linted by the same engine the command line runs, in this tab, and is never sent anywhere.
+  The font stack is the system one on purpose, so the page asks no third party for anything.
+-->
+<style>
+  :root {
+    --bg: #fbfbfa; --fg: #17171a; --dim: #5c5c66; --line: #dededa; --panel: #ffffff;
+    --accent: #1f3fbf; --err: #a3231b; --warn: #8a5300; --info: #4a4a55; --ok: #17603a;
+    --mark-err: #fde7e5; --mark-warn: #fdf2dc; --mark-info: #ececf2;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16161a; --fg: #eeeef2; --dim: #a2a2ae; --line: #33333c; --panel: #1e1e24;
+      --accent: #93aaff; --err: #ff9c92; --warn: #e6b45c; --info: #b9b9c6; --ok: #71d3a0;
+      --mark-err: #4a1f1b; --mark-warn: #453318; --mark-info: #33333c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 var(--sans); }
+  .wrap { max-width: 60rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.05rem; margin: 2rem 0 .5rem; }
+  h3 { font-size: .95rem; margin: 1rem 0 .35rem; }
+  p { margin: .5rem 0; }
+  a { color: var(--accent); }
+  .lede { font-size: 1.05rem; max-width: 44rem; }
+  .dim { color: var(--dim); }
+  .small { font-size: .875rem; }
+  .mono { font-family: var(--mono); }
+  .box { border: 1px solid var(--line); background: var(--panel); border-radius: 3px; padding: .85rem 1rem; }
+  .limits { margin: 1rem 0 1.5rem; }
+  .limits ul { margin: .4rem 0 0; padding-left: 1.1rem; }
+  .limits li { margin: .25rem 0; }
+  .row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; margin: 1rem 0 .5rem; }
+  .field { display: flex; flex-direction: column; gap: .2rem; }
+  label { font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); }
+  select, button, textarea { font: inherit; color: inherit; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 3px; padding: .4rem .55rem; }
+  button { cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  @media (prefers-color-scheme: dark) { button.primary { color: #12121a; } }
+  textarea { width: 100%; min-height: 11rem; font-family: var(--mono); font-size: .85rem; resize: vertical; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .summary { display: flex; flex-wrap: wrap; gap: .4rem 1.25rem; align-items: baseline; }
+  .grade { font-size: 1.6rem; font-weight: 650; font-family: var(--mono); }
+  .meta { font-family: var(--mono); font-size: .8rem; color: var(--dim); }
+  .notrun { margin-top: .6rem; border-left: 3px solid var(--warn); padding: .35rem .6rem; font-size: .875rem; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+  @media (max-width: 52rem) { .cols { grid-template-columns: 1fr; } }
+
+  .findings { list-style: none; margin: 0; padding: 0; max-height: 26rem; overflow: auto; }
+  .findings li { border-bottom: 1px solid var(--line); }
+  .findings button { width: 100%; text-align: left; border: 0; border-radius: 0; background: none;
+    padding: .5rem .6rem; display: block; }
+  .findings button[aria-current="true"] { background: var(--mark-info); }
+  .fwhere { font-family: var(--mono); font-size: .78rem; color: var(--dim); }
+  .fsev { font-family: var(--mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+  .sev-error .fsev { color: var(--err); } .sev-warning .fsev { color: var(--warn); } .sev-info .fsev { color: var(--info); }
+  .fmsg { display: block; font-size: .9rem; }
+
+  .text { font-family: var(--mono); font-size: .8rem; white-space: pre-wrap; word-break: break-word;
+    max-height: 26rem; overflow: auto; margin: 0; }
+  .text .line { display: block; padding-left: 1.6rem; position: relative; }
+  .text .line.hit::before { content: attr(data-n); position: absolute; left: 0; width: 1.3rem;
+    text-align: right; color: var(--dim); font-size: .7rem; }
+  .text .line.hit { background: color-mix(in srgb, var(--mark-info) 45%, transparent); }
+  mark { background: var(--mark-info); color: inherit; border-bottom: 2px solid var(--info); padding: 0; }
+  mark.error { background: var(--mark-err); border-bottom-color: var(--err); }
+  mark.warning { background: var(--mark-warn); border-bottom-color: var(--warn); }
+  mark.on { outline: 2px solid var(--accent); }
+
+  .detail dt { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); margin-top: .6rem; }
+  .detail dd { margin: .1rem 0 0; }
+  .detail pre { font-family: var(--mono); font-size: .8rem; white-space: pre-wrap; margin: .2rem 0;
+    padding: .4rem .5rem; background: var(--mark-info); border-radius: 2px; }
+  .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .9rem; }
+
+  .diff { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+  @media (max-width: 52rem) { .diff { grid-template-columns: 1fr; } }
+  .diff h3 { margin-top: 0; }
+  .diff pre { font-family: var(--mono); font-size: .78rem; white-space: pre-wrap; word-break: break-word;
+    margin: 0; padding: .5rem; border: 1px solid var(--line); border-radius: 2px; max-height: 18rem; overflow: auto; }
+  .warnline { color: var(--warn); font-size: .875rem; }
+  .okline { color: var(--ok); font-size: .875rem; }
+  [hidden] { display: none !important; }
+  footer { margin-top: 3rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>ai-slop-linter playground</h1>
+    <p class="lede">Paste a commit message, a pull request description or a README. It lists the
+    patterns that mark writing as machine-made, with a line, a column, a reason and its source,
+    and offers a fix where the fix is a character swap or a phrase with a shorter form.</p>
+  </header>
+
+  <section class="box limits" aria-labelledby="not-h">
+    <h2 id="not-h" style="margin-top:0">What this is not</h2>
+    <ul>
+      <li><strong>Not an authorship detector.</strong> It never outputs a probability that a model
+      wrote the text, and it cannot tell you who typed it. A person who writes <span class="mono">delve</span>
+      gets the same finding as a model.</li>
+      <li><strong>A clean pass is not proof of anything</strong> beyond the absence of the listed
+      tells. Text that passes can still be wrong, or empty.</li>
+      <li><strong>Your text never leaves this device.</strong> The linter is a rule engine that
+      runs in this tab. There is no account, no analytics, no error reporting and no storage:
+      reload the page and whatever you typed is gone. After the page has loaded you can
+      disconnect from the network and everything here still works.</li>
+      <li><strong>These are style rules, not objective errors.</strong> Each one says when a
+      maintainer should switch it off rather than obey it.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="in-h">
+    <h2 id="in-h">Your text</h2>
+    <div class="row">
+      <div class="field">
+        <label for="sample">Or start from a sample</label>
+        <select id="sample">
+          <option value="">Paste your own</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="language">Language of the prose</label>
+        <select id="language">
+          <option value="en">English (default)</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="es">Spanish</option>
+          <option value="pl">Polish</option>
+          <option value="ru">Russian</option>
+          <option value="hu">Hungarian</option>
+          <option value="tr">Turkish</option>
+          <option value="zh">Chinese</option>
+          <option value="ja">Japanese</option>
+          <option value="other">Something else, not English</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="kind">Read it as</label>
+        <select id="kind">
+          <option value="document">A document (not graded under 50 words)</option>
+          <option value="commit">A commit message or pull request body (always graded)</option>
+        </select>
+      </div>
+    </div>
+    <p id="sample-note" class="small dim" hidden></p>
+    <label for="input" class="small">Text to check</label>
+    <textarea id="input" spellcheck="false" aria-describedby="limit-note"
+      placeholder="Paste text here. It stays in this tab."></textarea>
+    <p id="limit-note" class="small dim">
+      <span id="count">0 characters</span>.
+      Up to 100,000 characters. The page re-lints shortly after you stop typing, on this tab's own
+      thread, and past roughly that much text the pause is long enough to feel while you type. No
+      commit message, pull request description or README this tool is aimed at is that long. It is
+      a product limit picked for responsiveness, not a threshold with evidence behind it.
+    </p>
+    <div class="actions">
+      <button id="clear" type="button">Clear</button>
+      <span id="status" class="small dim" role="status" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section id="result" aria-labelledby="res-h" hidden>
+    <h2 id="res-h">Result</h2>
+    <div class="box">
+      <div class="summary">
+        <span class="grade" id="grade"></span>
+        <span id="verdict"></span>
+      </div>
+      <p class="meta" id="runmeta"></p>
+      <div class="notrun" id="notrun" hidden></div>
+    </div>
+
+    <div class="cols" style="margin-top:1rem">
+      <div class="box" style="padding:0">
+        <h3 style="margin:.6rem .6rem .35rem">Findings <span id="fcount" class="dim small"></span></h3>
+        <ul class="findings" id="findings"></ul>
+        <p id="nofindings" class="small dim" style="padding:.6rem" hidden></p>
+      </div>
+      <div class="box">
+        <h3 style="margin-top:0">Your text, marked</h3>
+        <pre class="text" id="marked" tabindex="0" aria-label="Your text with findings marked"></pre>
+        <p class="small dim">A finding carries a position. Only the fixable rules carry a span, so
+        the others underline the character at the reported column and the line is shaded. Severity
+        is shown by the label in the list as well as by the shading, not by colour alone.</p>
+      </div>
+    </div>
+
+    <div class="box detail" id="detail" style="margin-top:1rem" hidden>
+      <h3 id="detail-title" style="margin-top:0"></h3>
+      <dl>
+        <dt>Why this reads as machine-made</dt><dd id="d-why"></dd>
+        <dt>Source</dt><dd id="d-source"></dd>
+        <dt>Instead of</dt><dd><pre id="d-before"></pre></dd>
+        <dt>Write</dt><dd><pre id="d-after"></pre></dd>
+        <dt>Ignore it when</dt><dd id="d-ignore"></dd>
+      </dl>
+      <div class="actions">
+        <button id="preview" type="button">Preview the fix</button>
+        <button id="ignore-one" type="button">Ignore this finding</button>
+        <button id="ignore-rule" type="button">Ignore this rule for this run</button>
+      </div>
+      <p id="nofix" class="small warnline" hidden>This rule has no fix. It needs a sentence
+      rewritten rather than a character swapped, so the tool leaves it to you.</p>
+    </div>
+
+    <div class="box" id="fixbox" style="margin-top:1rem" hidden>
+      <h3 style="margin-top:0" id="fixtitle"></h3>
+      <p class="small warnline">Nothing has been changed yet. A fix is applied only when you
+      accept it. Punctuation carries emphasis, so read the two sides before you do: swapping a
+      dash for a comma keeps every word and can still change how a sentence lands.</p>
+      <div class="diff">
+        <div><h3>Before</h3><pre id="fix-before"></pre></div>
+        <div><h3>After</h3><pre id="fix-after"></pre></div>
+      </div>
+      <div class="actions">
+        <button id="accept" class="primary" type="button">Accept this change</button>
+        <button id="discard" type="button">Keep my text as it is</button>
+      </div>
+    </div>
+
+    <div class="box" id="history" style="margin-top:1rem" hidden>
+      <h3 style="margin-top:0">Accepted changes</h3>
+      <p class="small okline" id="hcount"></p>
+      <div class="actions">
+        <button id="undo" type="button">Undo the last change</button>
+        <button id="revert" type="button">Back to the text I started with</button>
+        <button id="copy" type="button">Copy the current text</button>
+        <span id="copied" class="small dim" role="status" aria-live="polite"></span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <h2 style="margin-top:0">Keep it in your own workflow</h2>
+    <p class="small">The page is a way to see what the tool says. It is meant to be run where you
+    write, not here.</p>
+    <pre class="text" style="max-height:none">npx ai-slop-linter README.md          # lint one file
+npx ai-slop-linter --commit           # the last commit message
+npx ai-slop-linter README.md --fix    # apply the safe fixes in place</pre>
+    <p class="small">There is also a GitHub Action for pull requests, a commit-msg hook, a
+    commitlint rule and an agent skill.
+    <a href="https://github.com/Bubblegunn/ai-slop-linter#readme">The README has all of them</a>,
+    with the rule table, the measured false alarms on a fixed corpus, and what the tool cannot
+    show.</p>
+    <p class="small dim" id="footmeta"></p>
+  </footer>
+
+</div>
+<script type="module" src="./playground.js"></script>
+<noscript><p style="padding:1rem">This page lints your text in your own browser, so it needs
+JavaScript. Nothing is sent to a server either way.</p></noscript>
+</body>
+</html>

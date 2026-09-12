@@ -14,15 +14,20 @@
   <a href="https://doi.org/10.5281/zenodo.22396875"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22396875-111111?style=flat-square" alt="DOI"></a>
 </p>
 
-Readers have learned the tells of machine writing: the em dash, `not just X but Y`,
-`I hope this helps`, `a testament to`, the bold label on every bullet. Once they see
-one, they stop reading. ai-slop-linter is a linter for those tells. Point it at a commit
-message, a pull request description, a README or an article and it lists each one with
-a line number, a reason, and a fix where a fix cannot change the meaning.
+**Catch formulaic prose before it reaches your pull request.** Point ai-slop-linter at a
+commit message, a pull request description, a README or an article, and it lists every
+pattern that reads as machine-made with a line, a column, a reason and the source that
+reason comes from. It runs on your machine and calls no model.
 
-It is a linter, not a detector. It never outputs a probability that a model wrote the
-text. Every rule names its source, and a clean pass means one thing: none of the listed
-tells are there.
+Readers have learned these tells: the em dash, `not just X but Y`, `I hope this helps`,
+`a testament to`, the bold label on every bullet. Once a reader sees one, they stop
+reading.
+
+**It is not an authorship detector.** It never prints a probability that a model wrote
+the text, and it cannot tell you who typed it: someone who writes `delve` gets the same
+finding a model does. A clean pass means one thing, that none of the listed tells are
+present. Every rule names its source and says when you should switch it off rather than
+obey it. [What it cannot show](#what-it-cannot-show) is the full list of limits.
 
 ## 30 seconds
 
@@ -33,7 +38,33 @@ npx ai-slop-linter --commit           # the last commit message
 npx ai-slop-linter README.md --fix    # apply the safe fixes in place
 ```
 
-`slop` is the same binary, for people who type it a lot.
+`slop` is the same binary, for people who type it a lot. There is also a GitHub Action
+for pull requests, a `commit-msg` hook, a commitlint rule and an agent skill, and
+[In a repository](#in-a-repository) sets up each of them.
+
+To read the rules against your own text in a browser before installing anything, clone
+this repository and run `npm run playground`. It builds a single static page and prints
+one command to serve it locally. The page runs the same engine this README documents:
+there is no request in it that could carry your text anywhere, and it loads nothing from
+a third party. Two tests check that. It is not hosted anywhere, so the page is
+repository-local for now.
+
+### One finding that was taken, and why
+
+The linter runs on the five READMEs its author maintains. On one of them it reported
+seven `bold-label` warnings and a grade of C, because that README listed its rules as
+bold labels with a colon:
+
+```
+before   - **Name:** the rule, explained in a sentence.
+after    - The rule, explained in a sentence.
+```
+
+That one was accepted because the seven bullets had become a form rather than prose, and
+the rule pointed at the exact shape doing it. Three findings on other pages were left
+alone in the same pass, because a sentence is worth more than a clean score. Both
+outcomes, with the scores and the dates, are in
+[Run on our own writing](#run-on-our-own-writing).
 
 ## What it looks like
 
