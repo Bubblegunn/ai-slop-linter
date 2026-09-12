@@ -28,7 +28,7 @@
  *   needs human readers and has none yet.
  * - **Not anything about a rule with no fix.** Seventeen rules report and never rewrite, so they
  *   cannot be unsafe in this sense and are not exercised here.
- * - **Not coverage of text unlike these files.** Fifteen documents, all Markdown, almost all
+ * - **Not coverage of text unlike these files.** Fourteen documents, all Markdown, almost all
  *   English. A protected construct that appears in none of them is untested.
  */
 import { test } from "node:test";
