@@ -211,7 +211,10 @@ test("assembling twice produces identical bytes, so the page has no build timest
 test("the build refuses a module that needs Node, and one outside the allowlist", () => {
   // Each guard in the build script, seen failing. A guard nobody has watched fail is not known to
   // work, and this one is the only thing standing between the page and `node:child_process`.
-  const script = readFileSync(BUILD, "utf8");
+  // Line endings are normalised on the way in. A Windows checkout carries CRLF, and this test
+  // matches source text, so without this the patch found nothing and the guard went unwatched
+  // on one of the three operating systems the suite runs on.
+  const script = readFileSync(BUILD, "utf8").replace(/\r\n/g, "\n");
   const allowlistEnd = `  "rules/formatting.js",\n];`;
   assert.ok(script.includes(allowlistEnd), "the ENGINE allowlist is not in the shape this test patches");
 
