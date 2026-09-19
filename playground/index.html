@@ -247,6 +247,20 @@
         <span id="copied" class="small dim" role="status" aria-live="polite"></span>
       </div>
     </div>
+
+    <div class="box" id="configbox" style="margin-top:1rem" hidden>
+      <h3 style="margin-top:0">Keep these choices</h3>
+      <p class="small">You switched rules off for this run. Save this as <code>.slop.json</code> at
+      the top of your repository and the linter reads it every time: the command line, the hook and
+      the Action all resolve the same file, so the decision you made here holds there.</p>
+      <pre class="text" id="configtext" style="max-height:none"></pre>
+      <div class="actions">
+        <button id="copycfg" type="button">Copy this config</button>
+        <span id="cfgcopied" class="small dim" role="status" aria-live="polite"></span>
+      </div>
+      <p class="small dim" style="margin-bottom:0.25rem">What this file does not carry:</p>
+      <ul class="small dim" id="cfgomits" style="margin-top:0"></ul>
+    </div>
   </section>
 
   <footer>

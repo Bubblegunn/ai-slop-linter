@@ -47,6 +47,7 @@ test("the assembled page carries the engine and nothing that needs Node", () => 
   try {
     const files = walk(site);
     assert.deepEqual(files, [
+      "config-export.js",
       "engine/doc.js",
       "engine/index.js",
       "engine/meta.js",
@@ -162,14 +163,21 @@ test("no source line in the page can make a request or turn text into markup", (
   // half of the check and is NOT RUN here.
   const html = readFileSync(join(ROOT, "playground", "index.html"), "utf8");
   const js = readFileSync(join(ROOT, "playground", "playground.js"), "utf8");
+  const cfg = readFileSync(join(ROOT, "playground", "config-export.js"), "utf8");
 
-  for (const [name, body] of [["index.html", html], ["playground.js", js]] as const) {
+  for (const [name, body] of [["index.html", html], ["playground.js", js], ["config-export.js", cfg]] as const) {
     for (const pattern of [/\bfetch\s*\(/, /XMLHttpRequest/, /\bWebSocket\b/, /sendBeacon/, /EventSource/, /new\s+Image\s*\(/, /navigator\.geolocation/, /gtag|googletagmanager|google-analytics|plausible|posthog|sentry/i]) {
       assert.ok(!pattern.test(body), `${name} matches ${pattern}, which could carry text off the device`);
     }
     // No automatic storage: nothing the user typed outlives the tab.
     for (const pattern of [/localStorage/, /sessionStorage/, /indexedDB/, /document\.cookie/]) {
       assert.ok(!pattern.test(body), `${name} matches ${pattern}, and the page stores nothing`);
+    }
+    // No file leaves the page either. The config is offered through the clipboard, like the
+    // text is. A download path is not forbidden for ever, but it is a deliberate decision
+    // about what lands on someone's disk, and it should fail this test first.
+    for (const pattern of [/\bBlob\s*\(/, /createObjectURL/, /toDataURL/, /<a[^>]*\bdownload\b/]) {
+      assert.ok(!pattern.test(body), `${name} matches ${pattern}, which would write a file without that being decided`);
     }
     // User text must never be parsed as markup.
     for (const pattern of [/innerHTML/, /outerHTML/, /insertAdjacentHTML/, /document\.write/, /\beval\s*\(/, /new\s+Function\s*\(/]) {
@@ -265,4 +273,34 @@ test("the build refuses a module that needs Node, and one outside the allowlist"
   } finally {
     rmSync(unused.dir, { recursive: true, force: true });
   }
+});
+
+test("the config the page offers means the same thing to the command line", async () => {
+  // The page records which rules the reader switched off. That is only worth offering
+  // if the file it produces silences the same rules where the linter actually runs, so
+  // this goes through the CLI's own resolver rather than asserting a JSON literal,
+  // which would prove only that the module agrees with itself.
+  const { configFromState } = await import(pathToFileURL(join(ROOT, "playground", "config-export.js")).href);
+  const { settingsFor } = await import("../src/cli.js");
+
+  const text = readFileSync(join(ROOT, "test", "fixtures", "sloppy.md"), "utf8");
+  const before = lintText("README.md", text).findings;
+  const fired = [...new Set(before.map((f) => f.rule))];
+  assert.ok(fired.length >= 2, "the fixture has to trip at least two rules for this to mean anything");
+
+  const off = fired[0]!;
+  const config = configFromState({ ignoredRules: [off], language: "en" });
+  assert.deepEqual(config, { ignore: [off] }, "English is the default and is not written down as a decision");
+
+  const settings = settingsFor(config, "README.md");
+  const after = lintText("README.md", text, { ignore: settings.ignore }).findings;
+
+  assert.equal(after.filter((f) => f.rule === off).length, 0, `${off} was switched off and still fired`);
+  for (const rule of fired.slice(1)) {
+    assert.ok(after.some((f) => f.rule === rule), `${rule} was not switched off and stopped firing`);
+  }
+
+  // Not vacuous: a rule nobody turned off leaves the run exactly as it was.
+  const untouched = settingsFor(configFromState({ ignoredRules: [] }), "README.md");
+  assert.equal(lintText("README.md", text, { ignore: untouched.ignore }).findings.length, before.length);
 });

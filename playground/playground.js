@@ -12,6 +12,7 @@
 // - **Nothing is fixed without an explicit accept.** `fixText` is never called on the user's
 //   text. A preview applies one fix to a copy; the copy replaces the text only on accept.
 import { applyFixes, lintText, prepare, rules } from "./engine/index.js";
+import { CONFIG_OMISSIONS, configText } from "./config-export.js";
 import { ENGINE_FILES, VERSION } from "./engine/meta.js";
 import { SAMPLES } from "./samples.js";
 
@@ -36,6 +37,8 @@ const el = {
   accept: $("accept"), discard: $("discard"),
   history: $("history"), hcount: $("hcount"), undo: $("undo"), revert: $("revert"),
   copy: $("copy"), copied: $("copied"), footmeta: $("footmeta"),
+  configbox: $("configbox"), configtext: $("configtext"), copycfg: $("copycfg"),
+  cfgcopied: $("cfgcopied"), cfgomits: $("cfgomits"),
 };
 
 const byId = new Map(rules.map((r) => [r.id, r]));
@@ -144,6 +147,7 @@ function render() {
   renderMarked(state.text, findings);
   renderDetail(findings);
   renderHistory();
+  renderConfig();
 }
 
 function renderFindings(findings) {
@@ -247,6 +251,26 @@ function renderDetail(findings) {
   el.nofix.hidden = !!f.fix;
 }
 
+/**
+ * The rules switched off here are the one choice on this page that a repository can
+ * keep, so it is offered as the file the linter already reads rather than as a
+ * summary of what happened. What it leaves out is printed beside it: a file that
+ * silently dropped the other two kinds of choice would misrepresent what is being
+ * kept.
+ */
+function renderConfig() {
+  const text = configText({ ignoredRules: state.ignoredRules, language: el.language.value });
+  el.configbox.hidden = text === "";
+  if (text === "") return;
+  setText(el.configtext, text);
+  while (el.cfgomits.firstChild) el.cfgomits.removeChild(el.cfgomits.firstChild);
+  for (const line of CONFIG_OMISSIONS) {
+    const li = document.createElement("li");
+    setText(li, line);
+    el.cfgomits.appendChild(li);
+  }
+}
+
 function renderHistory() {
   const n = state.undo.length;
   el.history.hidden = n === 0;
@@ -345,6 +369,18 @@ el.copy.addEventListener("click", async () => {
     setText(el.copied, "The browser refused clipboard access; the text is selected, so copy it with your keyboard.");
   }
   setTimeout(() => setText(el.copied, ""), 4000);
+});
+
+el.copycfg.addEventListener("click", async () => {
+  const text = configText({ ignoredRules: state.ignoredRules, language: el.language.value });
+  try {
+    await navigator.clipboard.writeText(text);
+    setText(el.cfgcopied, "Copied. Save it as .slop.json.");
+  } catch {
+    // Same refusal path as the text copy: there is no server to fall back to.
+    setText(el.cfgcopied, "The browser refused clipboard access; select the config above and copy it with your keyboard.");
+  }
+  setTimeout(() => setText(el.cfgcopied, ""), 4000);
 });
 
 // ---------------------------------------------------------------------------- input
