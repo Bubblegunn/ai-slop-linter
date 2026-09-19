@@ -372,6 +372,19 @@ jobs:
 
 The Action outputs `findings`, the total count, for a later step.
 
+**pre-commit.** The repository ships both a Markdown hook and a `commit-msg` hook. The Node environment is created and the published package is installed by `pre-commit`, so neither Node nor `ai-slop-linter` needs to be installed globally.
+
+Paste these four lines into `.pre-commit-config.yaml`:
+
+```yaml
+repos:
+- repo: https://github.com/Bubblegunn/ai-slop-linter
+  rev: v0.1.5
+  hooks: [{id: ai-slop-markdown}, {id: ai-slop-commit-msg}]
+```
+
+Run `pre-commit install` for Markdown hooks and `pre-commit install --hook-type commit-msg` for the commit message hook.
+
 **Commit messages.** A `commit-msg` hook refuses a message with an error-severity tell:
 
 ```

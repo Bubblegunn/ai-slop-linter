@@ -1,0 +1,14 @@
+- id: ai-slop-markdown
+  name: ai-slop-linter (Markdown)
+  description: Lint Markdown files for AI-writing tells.
+  entry: ai-slop-linter
+  language: node
+  types: [markdown]
+
+- id: ai-slop-commit-msg
+  name: ai-slop-linter (commit message)
+  description: Lint the commit message being written for AI-writing tells.
+  entry: ai-slop-linter
+  args: [--commit-msg]
+  language: node
+  stages: [commit-msg]
