@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.1.6 (unreleased)
+
+**No rule changed. A checkout of this repository could not run, and nothing here could tell.**
+`bin` pointed at `dist/src/cli.js`, `dist/` is gitignored, and nothing built it at install time, so
+`npm i github:Bubblegunn/ai-slop-linter` installed a package with no `node_modules/.bin` entry at
+all. The tarball on the registry was always correct, which is exactly why twelve green checks said
+nothing: every check here builds first and then tests the build directory, so none of them ever saw
+what a stranger receives.
+
+Found by [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan), who tried to use the repository
+rather than read it: his pre-commit hooks ([#27](https://github.com/Bubblegunn/ai-slop-linter/pull/27))
+were correct and reported `Executable not found`, because `pre-commit` installs a hook repository
+from a git checkout.
+
+**`npm run release` now also tags `vX.Y.Z-pre-commit`**, at a commit whose tree is the release plus
+the paths `files` declares. Pin that rev in `.pre-commit-config.yaml`; the ordinary release tag and
+`main` stay free of build output. The commit is assembled through a temporary index and
+`git commit-tree`, so releasing touches neither the working tree nor the real index
+([#30](https://github.com/Bubblegunn/ai-slop-linter/pull/30)).
+
+A `prepare` script was the obvious answer and it is not one. Measured: it works under npm 11.6.2 and
+fails inside `pre-commit`'s own Node environment with `TS2688`, and npm 12 removes the road rather
+than narrowing it. Its defaults are `allow-git = "none"` and lifecycle scripts off, so a git
+dependency is refused outright and an install-time build would not run even if it were fetched.
+
+**The check that would have caught it now exists**: `npm pack`, a real install of that tarball into
+an empty directory, every `bin` name asserted present, and the executable run on an eighty-one word
+file written to fail. Eighty-one, because this linter does not grade anything under fifty: a
+shorter file would pass against an empty binary and prove nothing
+([#33](https://github.com/Bubblegunn/ai-slop-linter/pull/33)).
+
+**The release gate no longer forbids the entry the release script requires.** It demanded the top
+`## ` heading equal `package.json`'s version on every push, so no entry could be written between two
+releases and an outside contributor's credit could only ever appear at release time. It recognises
+two states now and says which one it found. Ported from workproof, where
+[@shivam-070208](https://github.com/shivam-070208) fixed the same contradiction, together with the
+shared version comparator that stops the two scripts disagreeing again, and with the nine tests this
+repository's gate had never had ([#32](https://github.com/Bubblegunn/ai-slop-linter/pull/32)).
+
+**The playground keeps the rules you switched off.** Turning a rule off in the browser now produces
+the `.slop.json` the command line, the hook and the Action all read, so a decision made there holds
+where the work happens. The page also prints the two kinds of choice a config cannot carry, findings
+dismissed one at a time and the commit-message reading, rather than silently dropping them
+([#28](https://github.com/Bubblegunn/ai-slop-linter/pull/28)).
+
 ## 0.1.5 (2026-09-12)
 
 **No rule changed.** `src/` is byte for byte what 0.1.4 shipped, so a run on your text gives the
