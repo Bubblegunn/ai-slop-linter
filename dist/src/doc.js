@@ -1,0 +1,279 @@
+const blank = (s) => s.replace(/[^\n]/g, " ");
+/**
+ * Spans `[start, end)` of `open`...`close` pairs found by index search, so a file
+ * with thousands of unclosed openers costs one pass instead of one scan per opener
+ * (the regex form was quadratic on crafted input). A `stop` character between the
+ * two ends the candidate without a match and the search resumes after the opener;
+ * an `opener` test rejects a candidate at its first character.
+ */
+function delimited(s, open, close, stop, opener) {
+    const out = [];
+    let from = 0;
+    for (;;) {
+        const start = s.indexOf(open, from);
+        if (start < 0)
+            break;
+        if (opener && !opener.test(s.slice(start, start + 3))) {
+            from = start + 1;
+            continue;
+        }
+        const end = s.indexOf(close, start + open.length);
+        if (end < 0)
+            break;
+        const inner = s.slice(start + open.length, end);
+        if (stop && stop.test(inner)) {
+            from = start + open.length;
+            continue;
+        }
+        out.push([start, end + close.length]);
+        from = end + close.length;
+    }
+    return out;
+}
+/**
+ * A line with its blockquote markers and any carriage return removed, so a fence
+ * inside a quote is still a fence and a file with CRLF endings closes its blocks.
+ */
+const unquote = (line) => line.replace(/\r$/, "").replace(/^(?: {0,3}>\s?)+/, "");
+/**
+ * Fenced blocks, line by line rather than by regex, so that a fence carrying a
+ * blockquote prefix (`> \`\`\``) closes on its own marker like any other.
+ */
+function fencedSpans(lines, lineStarts) {
+    const out = [];
+    for (let i = 0; i < lines.length; i++) {
+        const open = /^( {0,3})(`{3,}|~{3,})/.exec(unquote(lines[i]));
+        if (!open)
+            continue;
+        const marker = open[2][0];
+        let end = lines.length - 1;
+        for (let j = i + 1; j < lines.length; j++) {
+            const close = new RegExp(`^ {0,3}${marker}{${open[2].length},}[ \t]*$`).test(unquote(lines[j]));
+            if (close) {
+                end = j;
+                break;
+            }
+        }
+        out.push([lineStarts[i], lineStarts[end] + lines[end].length]);
+        i = end;
+    }
+    return out;
+}
+/**
+ * Indented code blocks: four spaces or a tab, opened after a blank line, which is
+ * how a README quotes a diff. A run that continues a list is left alone, because
+ * list continuation is indented too and its text is prose the rules should read.
+ */
+function indentedSpans(lines, lineStarts) {
+    const indented = (l) => /^(?: {4}|\t)/.test(l) && l.trim() !== "";
+    // `trim` already drops a trailing carriage return, so CRLF files need nothing more here.
+    const blank = (l) => l.trim() === "";
+    const out = [];
+    let inList = false;
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (blank(line))
+            continue;
+        if (!indented(line)) {
+            inList = /^ {0,3}(?:[-*+]|\d{1,9}[.)])(?:\s|$)/.test(line);
+            continue;
+        }
+        if (inList)
+            continue;
+        if (i > 0 && !blank(lines[i - 1]))
+            continue; // cannot interrupt a paragraph
+        let end = i;
+        for (let j = i + 1; j < lines.length; j++) {
+            if (indented(lines[j])) {
+                end = j;
+                continue;
+            }
+            if (blank(lines[j]))
+                continue; // a blank line only ends the block if nothing indented follows
+            break;
+        }
+        out.push([lineStarts[i], lineStarts[end] + lines[end].length]);
+        i = end;
+    }
+    return out;
+}
+/** Mask a region of `masked` in place (string surgery keeps the length). */
+function mask(masked, start, end) {
+    return masked.slice(0, start) + blank(masked.slice(start, end)) + masked.slice(end);
+}
+/**
+ * Scripts that do not put a space between words. A run of these is one long token to any
+ * regular expression, which is why counting words with a character class reported a
+ * three-thousand character Japanese document as one word.
+ */
+const SPACELESS = /[\p{Script_Extensions=Han}\p{Script_Extensions=Hiragana}\p{Script_Extensions=Katakana}\p{Script_Extensions=Thai}\p{Script_Extensions=Khmer}\p{Script_Extensions=Lao}\p{Script_Extensions=Myanmar}\p{Script_Extensions=Tibetan}]+/gu;
+/** A word in a script that separates them: letters, the marks that belong to them, digits, apostrophes. */
+const TOKEN = /[\p{L}\p{M}\p{N}'\u2019]+/gu;
+const segmenter = typeof Intl !== "undefined" && typeof Intl.Segmenter === "function"
+    ? new Intl.Segmenter(undefined, { granularity: "word" })
+    : undefined;
+/**
+ * A run this long that the segmenter returns as a single word is a segmenter without the
+ * dictionary for that script, not a very long word. Twelve characters is a judgement: the
+ * longest single words in these scripts are shorter than that, and the check only decides
+ * whether to fall back to the estimate, never what a correctly segmented run counts as.
+ */
+const NO_DICTIONARY_AT = 12;
+/**
+ * Words in one run of a script that does not separate them.
+ *
+ * `Intl.Segmenter` existing is not the same as ICU carrying the word dictionaries it needs:
+ * a Node built with small ICU still constructs the segmenter and then hands back the whole
+ * run as one segment, which is the three-thousand-character-Japanese-document-is-one-word
+ * bug again, silently. So the result is checked rather than trusted, per run, which also
+ * covers a build that has the dictionary for one of these scripts and not another.
+ */
+function countSpaceless(run, seg = segmenter) {
+    if (seg) {
+        let n = 0;
+        for (const part of seg.segment(run))
+            if (part.isWordLike)
+                n++;
+        if (n > 1 || (n === 1 && [...run].length < NO_DICTIONARY_AT))
+            return n;
+    }
+    return Math.ceil([...run].length / 2);
+}
+/**
+ * How many words a document holds, in any script.
+ *
+ * Scripts that separate words are tokenised, which is what the tool has always done and
+ * keeps every English score where it was. Scripts that do not separate words are handed to
+ * the platform's Unicode segmenter (UAX #29 plus ICU's dictionaries), because the only
+ * alternative is a characters-per-word constant, and that would be a number nobody measured.
+ * Where the segmenter is missing or has no dictionary for the script, two characters count
+ * as one word and the count is an estimate; that is the conservative direction, since fewer
+ * words raise the score rather than lower it.
+ *
+ * The second argument exists so a test can hand in a segmenter that behaves like a build
+ * without dictionaries; nothing in the tool passes it.
+ */
+export function countWords(text, seg = segmenter) {
+    let spaceless = 0;
+    const separated = text.replace(SPACELESS, (run) => {
+        spaceless += countSpaceless(run, seg);
+        return " ";
+    });
+    return (separated.match(TOKEN) ?? []).length + spaceless;
+}
+export function prepare(path, text) {
+    let masked = text;
+    const allLines = text.split("\n");
+    const starts = [0];
+    for (let i = 0; i < text.length; i++)
+        if (text[i] === "\n")
+            starts.push(i + 1);
+    // Front matter at the very top, YAML (---) or TOML (+++).
+    const fm = /^(---|\+\+\+)\r?\n[\s\S]*?\r?\n\1\r?\n/.exec(text);
+    if (fm)
+        masked = mask(masked, 0, fm[0].length);
+    // Fenced code blocks, including a fence inside a blockquote.
+    for (const [s, e] of fencedSpans(allLines, starts))
+        masked = mask(masked, s, e);
+    // Code quoted by indentation, which is how a README shows a diff.
+    for (const [s, e] of indentedSpans(allLines, starts))
+        masked = mask(masked, s, e);
+    // HTML blocks that hold code.
+    for (const [s, e] of delimited(text, "<pre", "</pre>"))
+        masked = mask(masked, s, e);
+    for (const [s, e] of delimited(text, "<code", "</code>"))
+        masked = mask(masked, s, e);
+    // HTML comments (kept readable for the directive scan below, masked for rules).
+    for (const [s, e] of delimited(text, "<!--", "-->"))
+        masked = mask(masked, s, e);
+    // Inline code.
+    for (const m of masked.matchAll(/`[^`\n]*`/g))
+        masked = mask(masked, m.index, m.index + m[0].length);
+    // Markdown link targets and bare URLs.
+    for (const [s, e] of delimited(masked, "](", ")", /\s/))
+        masked = mask(masked, s + 2, e - 1);
+    for (const m of masked.matchAll(/https?:\/\/[^\s)>\]]+/g))
+        masked = mask(masked, m.index, m.index + m[0].length);
+    // HTML tags.
+    for (const [s, e] of delimited(masked, "<", ">", /\n/, /^<\/?[a-zA-Z]/))
+        masked = mask(masked, s, e);
+    const lineStarts = [0];
+    for (let i = 0; i < text.length; i++)
+        if (text[i] === "\n")
+            lineStarts.push(i + 1);
+    const ignoredLines = new Set();
+    const ignoredRules = new Map();
+    const ignoredLineRules = new Set();
+    const lines = text.split("\n");
+    lines.forEach((line, i) => {
+        const next = /<!--\s*slop-ignore-next-line(?:\s+([\w,\s-]+?))?\s*-->/.exec(line);
+        if (next) {
+            const rules = next[1]?.split(/[,\s]+/).filter(Boolean);
+            if (rules?.length)
+                for (const r of rules)
+                    ignoredLineRules.add(`${i + 2}:${r}`);
+            else
+                ignoredLines.add(i + 2);
+        }
+        const file = /<!--\s*slop-ignore\s+([\w,\s-]+?)\s*-->/.exec(line);
+        if (file && !/slop-ignore-next-line/.test(line)) {
+            for (const r of file[1].split(/[,\s]+/).filter(Boolean))
+                if (!ignoredRules.has(r))
+                    ignoredRules.set(r, i + 1);
+        }
+    });
+    const words = countWords(masked);
+    return { path, text, masked, lineStarts, words, ignoredLines, ignoredRules, ignoredLineRules };
+}
+/** 1-based line and column for an absolute offset. */
+export function position(doc, offset) {
+    let lo = 0;
+    let hi = doc.lineStarts.length - 1;
+    while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (doc.lineStarts[mid] <= offset)
+            lo = mid;
+        else
+            hi = mid - 1;
+    }
+    return { line: lo + 1, column: offset - doc.lineStarts[lo] + 1 };
+}
+/** The original text of the line containing `offset`, trimmed to a readable excerpt around it. */
+export function excerptAt(doc, offset, length) {
+    const { line } = position(doc, offset);
+    const start = doc.lineStarts[line - 1];
+    const end = doc.text.indexOf("\n", start);
+    const lineText = doc.text.slice(start, end === -1 ? undefined : end);
+    if (lineText.length <= 100)
+        return lineText.trim();
+    const col = offset - start;
+    const from = Math.max(0, col - 40);
+    const to = Math.min(lineText.length, col + length + 40);
+    return `${from > 0 ? "…" : ""}${lineText.slice(from, to).trim()}${to < lineText.length ? "…" : ""}`;
+}
+/** Run a regex over the masked text and turn every match into a finding. */
+export function scan(doc, rule, pattern, message, fix) {
+    const out = [];
+    const re = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g");
+    for (const m of doc.masked.matchAll(re)) {
+        const start = m.index;
+        const { line, column } = position(doc, start);
+        const finding = { rule: rule.id, severity: rule.severity, line, column, excerpt: excerptAt(doc, start, m[0].length), message: message(m) };
+        if (fix) {
+            const replacement = fix(m);
+            if (replacement !== null)
+                finding.fix = { start, end: start + m[0].length, replacement };
+        }
+        out.push(finding);
+    }
+    return out;
+}
+/** Whether a finding is suppressed by an inline directive. */
+export function suppressed(doc, f) {
+    if (doc.ignoredLines.has(f.line))
+        return true;
+    if (doc.ignoredLineRules.has(`${f.line}:${f.rule}`))
+        return true;
+    const from = doc.ignoredRules.get(f.rule);
+    return from !== undefined && f.line >= from;
+}
