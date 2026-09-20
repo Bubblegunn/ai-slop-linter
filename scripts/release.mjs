@@ -48,6 +48,9 @@ const target = (() => {
   return spec;
 })();
 const tag = `v${target}`;
+// pre-commit pins a rev and installs the repository from that checkout, so the rev it pins
+// has to carry the built output. See the block that creates it, below.
+const hooksTag = `${tag}-pre-commit`;
 const cmp = (a, b) => {
   const x = a.split(".").map(Number);
   const y = b.split(".").map(Number);
@@ -64,6 +67,7 @@ git("fetch", "origin", "main", "--tags");
 const head = git("rev-parse", "HEAD");
 if (head !== git("rev-parse", "origin/main")) fail("main is not equal to origin/main; pull or push first");
 if (git("tag", "--list", tag)) fail(`tag ${tag} already exists`);
+if (has(".pre-commit-hooks.yaml") && git("tag", "--list", hooksTag)) fail(`tag ${hooksTag} already exists`);
 if (process.env.RELEASE_SKIP_CI_CHECK !== "1") {
   const r = spawnSync("gh", ["run", "list", "--branch", "main", "--workflow", "ci", "--limit", "1", "--json", "conclusion,headSha,status"], {
     cwd: root,
@@ -100,6 +104,7 @@ const pinnedAll = new RegExp(pinned.source, "g");
 for (const f of readmes) if (pinned.test(read(f))) plan.push(`${f}: Bubblegunn/${name}@${tag}`);
 if (pkg.scripts?.["release:prepare"]) plan.push("npm run release:prepare");
 const major = `v${target.split(".")[0]}`;
+if (has(".pre-commit-hooks.yaml")) plan.push(`tag ${hooksTag} at a commit carrying the built output, and push it (main and the working tree are not touched)`);
 plan.push("npm test", `commit "chore(release): ${target}"`, `tag ${tag} (annotated, message = the CHANGELOG entry)`, "git push origin main --follow-tags", `move ${major} to ${tag} and force-push it (the moving tag Actions users pin)`);
 
 console.log(`release ${name} ${current} -> ${target}${dryRun ? " (dry run)" : ""}`);
@@ -130,6 +135,12 @@ if (has(".claude-plugin/plugin.json")) replaceIn(".claude-plugin/plugin.json", /
 for (const f of readmes) {
   const text = read(f);
   if (pinned.test(text)) writeFileSync(join(root, f), text.replace(pinnedAll, `Bubblegunn/${name}@${tag}`));
+}
+// A README that pins the pre-commit rev moves with it. Conditional: most repositories do not.
+const pinnedHooks = /rev: v\d+\.\d+\.\d+-pre-commit/g;
+for (const f of readmes) {
+  const text = read(f);
+  if (pinnedHooks.test(text)) writeFileSync(join(root, f), text.replace(pinnedHooks, `rev: ${hooksTag}`));
 }
 if (pkg.scripts?.["release:prepare"]) sh("npm", ["run", "release:prepare"]);
 sh("npm", ["test"]);
@@ -163,10 +174,38 @@ try {
   // ruleset, and the person running this command is the admin. A workflow token could not.
   sh("git", ["tag", "--force", major, "HEAD"], { stdio: "ignore" });
   sh("git", ["push", "--force", "origin", `refs/tags/${major}`]);
+  // pre-commit installs a hook repository from a git checkout, and a checkout of a package
+  // whose build output is gitignored contains no executable: npm links nothing and the hook
+  // reports "Executable not found". Measured in ai-slop-linter#29, together with the reason a
+  // `prepare` script is not the way out — npm 12 ships `allow-git = "none"` and lifecycle
+  // scripts off by default, so an install-time build has a shelf life.
+  //
+  // So the rev pre-commit pins carries the built output. It is written through a temporary
+  // index rather than by committing on main: the branch stays clean, and this command never
+  // touches the working tree or the real index.
+  if (has(".pre-commit-hooks.yaml")) {
+    const binTargets = [...new Set(Object.values(pkg.bin ?? {}))].map((b) => b.replace(/^\.\//, ""));
+    if (binTargets.length === 0) fail(".pre-commit-hooks.yaml is present but package.json declares no bin");
+    sh("npm", ["run", "build"]);
+    for (const b of binTargets) if (!has(b)) fail(`the build did not produce ${b}, which package.json bin points at`);
+    const shipped = (pkg.files ?? []).filter((f) => has(f));
+    if (shipped.length === 0) fail("package.json declares no files, so there is nothing to put in the tag");
+    const index = join(dir, "pre-commit-index");
+    const withIndex = (...a) => execFileSync("git", a, { cwd: root, encoding: "utf8", env: { ...process.env, GIT_INDEX_FILE: index } }).trim();
+    withIndex("read-tree", "HEAD");
+    withIndex("add", "--force", ...shipped);
+    const tree = withIndex("write-tree");
+    writeFileSync(join(dir, "hooks-commit.txt"), `chore(release): ${target} with the built output pre-commit needs\n\nNot on main. This commit exists so that \`rev: ${hooksTag}\` resolves to a tree that\ncontains ${binTargets.join(", ")}; a checkout of main does not, and nothing builds it\nat install time.\n`);
+    const commit = withIndex("commit-tree", tree, "-p", git("rev-parse", "HEAD"), "-F", join(dir, "hooks-commit.txt"));
+    writeFileSync(join(dir, "hooks-tag.txt"), `${name} ${target} for pre-commit\n\nSame release as ${tag}, plus the built output. Pin this rev in .pre-commit-config.yaml.\n`);
+    sh("git", ["tag", "-a", "-F", join(dir, "hooks-tag.txt"), hooksTag, commit]);
+    sh("git", ["push", "origin", `refs/tags/${hooksTag}`]);
+  }
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }
 const repo = String(pkg.repository?.url ?? pkg.repository ?? "")
   .replace(/^git\+/, "")
   .replace(/\.git$/, "");
+if (has(".pre-commit-hooks.yaml")) console.log(`${hooksTag} pushed: the same release with the built output, for pre-commit users.`);
 console.log(`\n${tag} pushed and ${major} moved to it. Watch the release workflow: ${repo}/actions/workflows/release.yml`);

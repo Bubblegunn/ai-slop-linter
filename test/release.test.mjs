@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 
 const script = join(dirname(fileURLToPath(import.meta.url)), "..", "scripts", "release.mjs");
 
-function fixture() {
+function fixture({ preCommit = false } = {}) {
   const base = mkdtempSync(join(tmpdir(), "release-test-"));
   const origin = join(base, "origin.git");
   const repo = join(base, "repo");
@@ -32,13 +32,21 @@ function fixture() {
       {
         name: "fixture-pkg",
         version: "0.1.0",
-        scripts: { test: "node -e 0" },
+        ...(preCommit ? { bin: { "fixture-pkg": "./dist/src/cli.js" }, files: ["dist/src", "README.md"] } : {}),
+        scripts: { test: "node -e 0", ...(preCommit ? { build: "node build.mjs" } : {}) },
         repository: { type: "git", url: "git+https://github.com/Bubblegunn/fixture-pkg.git" },
       },
       null,
       2,
     )}\n`,
   );
+  if (preCommit) {
+    // The shape that breaks a git checkout: the only executable is build output, and the
+    // build output is ignored, so nothing a consumer clones contains it.
+    write(".gitignore", "dist/\n");
+    write(".pre-commit-hooks.yaml", "- id: fixture\n  name: fixture\n  entry: fixture-pkg\n  language: node\n  types: [markdown]\n");
+    write("build.mjs", 'import { mkdirSync, writeFileSync } from "node:fs";\nmkdirSync("dist/src", { recursive: true });\nwriteFileSync("dist/src/cli.js", "#!/usr/bin/env node\\n");\n');
+  }
   write("CHANGELOG.md", "# Changelog\n\n## 0.2.0 (unreleased)\n\n- Something new.\n- And a fix.\n\n## 0.1.0 (2026-01-01)\n\n- First.\n");
   write("CITATION.cff", 'cff-version: 1.2.0\ntitle: "fixture-pkg"\nversion: "0.1.0"\ndate-released: "2026-01-01"\n');
   write("action.yml", 'name: fixture\ninputs:\n  mode:\n    default: "x"\n  version:\n    description: fixture version to run.\n    required: false\n    default: "0.1.0"\nruns:\n  using: composite\n  steps: []\n');
@@ -156,4 +164,49 @@ test("a pattern that truly matches nothing still fails", () => {
   const r = run(f.repo, "0.2.0");
   assert.notEqual(r.status, 0);
   assert.match(r.stdout + r.stderr, /CITATION\.cff: nothing matched for version/);
+});
+
+test("a repository that ships pre-commit hooks gets a rev carrying the built output", () => {
+  const f = fixture({ preCommit: true });
+
+  try {
+    const r = run(f.repo, "0.2.0");
+
+    assert.equal(r.status, 0, r.stderr);
+    const tags = execFileSync("git", ["tag", "--list"], { cwd: f.origin, encoding: "utf8" }).trim().split("\n").sort();
+    assert.deepEqual(tags, ["v0", "v0.2.0", "v0.2.0-pre-commit"]);
+
+    const paths = (ref) =>
+      execFileSync("git", ["ls-tree", "-r", "--name-only", ref], { cwd: f.origin, encoding: "utf8" }).trim().split("\n");
+
+    // The point of the tag: the executable package.json bin names is in the tree pre-commit
+    // would check out. Asserting only this would pass if the release tag carried it too, so
+    // the next two assertions are what make it mean something.
+    assert.ok(paths("v0.2.0-pre-commit").includes("dist/src/cli.js"));
+    assert.ok(!paths("v0.2.0").includes("dist/src/cli.js"), "the release tag stays free of build output");
+    assert.ok(!paths("main").includes("dist/src/cli.js"), "main stays free of build output");
+
+    // Written through a temporary index, so the command the maintainer ran left nothing behind.
+    assert.equal(f.git("status", "--porcelain"), "");
+    assert.equal(f.git("rev-parse", "HEAD"), f.git("rev-parse", "origin/main"));
+
+    const message = execFileSync("git", ["log", "-1", "--format=%s", "v0.2.0-pre-commit"], { cwd: f.origin, encoding: "utf8" }).trim();
+    assert.match(message, /^chore\(release\): 0\.2\.0 with the built output pre-commit needs$/);
+  } finally {
+    rmSync(f.base, { recursive: true, force: true });
+  }
+});
+
+test("a repository without pre-commit hooks gets no such tag", () => {
+  const f = fixture();
+
+  try {
+    const r = run(f.repo, "0.2.0");
+
+    assert.equal(r.status, 0, r.stderr);
+    const tags = execFileSync("git", ["tag", "--list"], { cwd: f.origin, encoding: "utf8" }).trim().split("\n").sort();
+    assert.deepEqual(tags, ["v0", "v0.2.0"]);
+  } finally {
+    rmSync(f.base, { recursive: true, force: true });
+  }
 });
