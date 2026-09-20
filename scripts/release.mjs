@@ -12,6 +12,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { compareVersions } from "./version.mjs";
 
 const root = process.cwd();
 const args = process.argv.slice(2);
@@ -51,13 +52,7 @@ const tag = `v${target}`;
 // pre-commit pins a rev and installs the repository from that checkout, so the rev it pins
 // has to carry the built output. See the block that creates it, below.
 const hooksTag = `${tag}-pre-commit`;
-const cmp = (a, b) => {
-  const x = a.split(".").map(Number);
-  const y = b.split(".").map(Number);
-  for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] - y[i];
-  return 0;
-};
-if (cmp(target, current) < 0) fail(`${target} is lower than the current version ${current}`);
+if (compareVersions(target, current) < 0) fail(`${target} is lower than the current version ${current}`);
 
 // Preconditions.
 if (git("status", "--porcelain")) fail("the working tree is not clean; commit or stash first");

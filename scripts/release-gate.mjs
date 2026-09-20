@@ -8,6 +8,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { compareVersions } from "./version.mjs";
 
 const root = process.cwd();
 const read = (f) => readFileSync(join(root, f), "utf8");
@@ -17,9 +18,42 @@ const problems = [];
 const pkg = JSON.parse(read("package.json"));
 const version = pkg.version;
 
-const heading = /^## +(\S+)/m.exec(read("CHANGELOG.md"));
-if (!heading) problems.push("CHANGELOG.md has no '## ' heading");
-else if (heading[1] !== version) problems.push(`CHANGELOG.md top entry is ${heading[1]}, package.json is ${version}`);
+// Two states are legal, and the gate says which one it found. Requiring the top entry to equal
+// package.json forbade the unreleased entry scripts/release.mjs requires, so a contributor's
+// credit could only ever be written at release time, never on the day their work merged.
+const heading = /^## +(\S+)(.*)$/m.exec(read("CHANGELOG.md"));
+
+let changelogState;
+
+if (!heading) {
+  problems.push("CHANGELOG.md has no '## ' heading");
+} else {
+  const headingVersion = heading[1];
+  const headingRest = heading[2];
+  const hasDate = /\d{4}-\d{2}-\d{2}/.test(headingRest);
+
+  if (!/^\d+\.\d+\.\d+$/.test(headingVersion)) {
+    problems.push(`CHANGELOG.md top entry is not a version: ${headingVersion}`);
+  } else {
+    const comparison = compareVersions(headingVersion, version);
+
+    if (comparison === 0) {
+      if (hasDate) {
+        changelogState = `released at ${version}`;
+      } else {
+        problems.push(`CHANGELOG.md top entry ${headingVersion} is undated`);
+      }
+    } else if (comparison > 0) {
+      if (hasDate) {
+        problems.push(`CHANGELOG.md top entry ${headingVersion} is dated, package.json is ${version}`);
+      } else {
+        changelogState = `${headingVersion} pending, package at ${version}`;
+      }
+    } else {
+      problems.push(`CHANGELOG.md top entry is ${headingVersion}, package.json is ${version}`);
+    }
+  }
+}
 
 if (has("CITATION.cff")) {
   const v = /^version: "?([^"\n]+)"?$/m.exec(read("CITATION.cff"))?.[1];
@@ -62,4 +96,4 @@ if (problems.length) {
   for (const p of problems) console.error(`release-gate: ${p}`);
   process.exit(1);
 }
-console.log(`release-gate: ok, version ${version} everywhere, ${files.length} packed files all allowed`);
+console.log(`release-gate: ok, ${changelogState}, ${files.length} packed files all allowed`);
