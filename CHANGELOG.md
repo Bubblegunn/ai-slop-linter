@@ -6,8 +6,13 @@
 `bin` pointed at `dist/src/cli.js`, `dist/` is gitignored, and nothing built it at install time, so
 `npm i github:Bubblegunn/ai-slop-linter` installed a package with no `node_modules/.bin` entry at
 all. The tarball on the registry was always correct, which is exactly why twelve green checks said
-nothing: every check here builds first and then tests the build directory, so none of them ever saw
-what a stranger receives.
+nothing: every check on a pull request builds first and then tests the build directory, so none of
+them saw what a stranger receives.
+
+One check did, and it is worth naming rather than claiming none existed: the release workflow's
+`smoke` job installs the published package from the registry on three operating systems. It covers
+the npm route, it runs only after publishing, and it asserts `--version` rather than that the linter
+lints. It could not have caught this, because the route that broke is the git checkout.
 
 Found by [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan), who tried to use the repository
 rather than read it: his pre-commit hooks ([#27](https://github.com/Bubblegunn/ai-slop-linter/pull/27))

@@ -6,6 +6,12 @@ permissions:
   contents: read
 jobs:
   publish:
+    # The glob above cannot exclude a suffix: "v*.*.*" also matches v0.1.6-pre-commit, the rev
+    # pre-commit users pin, which scripts/release.mjs creates beside every release. That tag is the
+    # same release plus built output, not a separate version, so publishing it is meaningless. The
+    # version guard below already refuses it, but a red run on every release teaches people to
+    # ignore red runs. Skip it instead.
+    if: ${{ !endsWith(github.ref_name, '-pre-commit') }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write # npm trusted publishing (OIDC); provenance is attached automatically
