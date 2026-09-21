@@ -8,6 +8,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { extractPackedFiles } from "./npm-pack.mjs";
 import { compareVersions } from "./version.mjs";
 
 const root = process.cwd();
@@ -75,7 +76,7 @@ if (has(".claude-plugin/plugin.json")) {
 const packed = JSON.parse(
   execFileSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], shell: process.platform === "win32" }),
 );
-const files = packed[0].files.map((f) => f.path).sort();
+const files = extractPackedFiles(packed, pkg.name).map((f) => f.path).sort();
 const allowlistPath = "scripts/pack-allowlist.txt";
 if (process.argv.includes("--update")) {
   writeFileSync(join(root, allowlistPath), `${files.join("\n")}\n`);
