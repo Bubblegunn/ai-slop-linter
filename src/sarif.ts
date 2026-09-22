@@ -10,7 +10,7 @@ const helpUri = (source: string): string | undefined =>
   source.startsWith("Wikipedia,") ? WIKI : undefined;
 
 export function renderSarif(results: LintResult[], ruleSet: readonly Rule[], version: string): string {
-  const rules = ruleSet.map((rule, index) => ({
+  const rules = ruleSet.map((rule) => ({
     id: rule.id,
     name: rule.title,
     shortDescription: { text: rule.title },

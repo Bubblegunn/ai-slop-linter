@@ -656,6 +656,8 @@ jobs:
           sarif_file: results.sarif
 ```
 
+One limit worth knowing before you point this at something unusual: the `artifactLocation.uri` in the output is the path you gave on the command line, so running from outside the repository root can produce `../` segments that code scanning will not accept. The workflow above runs at the root, where that cannot happen.
+
 The validator step is intentional: validate the generated SARIF before upload rather than eyeballing it. The upload requires `security-events: write`; no broader write permission is needed. `--max-score` remains a separate repository policy and is not encoded as SARIF severity.
 
 ## Contributing

@@ -8,6 +8,17 @@
 version, while `release.mjs` refuses to release until an entry for the new version exists, so a
 contributor's credit could only ever be written at release time.
 
+**SARIF output, so findings survive the pull request they were found in.** `--format sarif` emits
+SARIF 2.1.0 for GitHub code scanning, with every rule in the run metadata carrying its description
+and the source it cites, severities mapped straight across (`error`, `warning`, `info` to `error`,
+`warning`, `note`) rather than promoted, and `columnKind: utf16CodeUnits` declared beside columns
+this tool already reports in UTF-16 code units. Written by
+[@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan) ([#41](https://github.com/Bubblegunn/ai-slop-linter/pull/41),
+closes [#10](https://github.com/Bubblegunn/ai-slop-linter/issues/10)), whose test puts a surrogate
+pair before the finding so the asserted column, 4 in UTF-16 units and 3 in code points, pins the
+declaration to the value. The generated file is validated in continuous integration rather than
+eyeballed.
+
 Both fixes are [@shivam-070208](https://github.com/shivam-070208)'s, written on workproof
 ([#35](https://github.com/Bubblegunn/workproof/pull/35) and
 [#29](https://github.com/Bubblegunn/workproof/pull/29)) and ported here with his four tests. Each
