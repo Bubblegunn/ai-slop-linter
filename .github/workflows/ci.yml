@@ -48,10 +48,6 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run build
-      - name: Generate and validate SARIF
-        run: |
-          node dist/src/cli.js --format sarif --warn test/fixtures/sloppy.md > results.sarif
-          npx --yes @microsoft/sarif-multitool validate results.sarif
       - run: npx publint --strict
       - run: npx attw --pack . --ignore-rules cjs-resolves-to-esm # ESM only, by design
       - name: Install the packed tarball in an empty project and run it

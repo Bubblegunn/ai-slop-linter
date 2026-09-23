@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.8 (unreleased)
+
+**The SARIF check in CI could not fail.** `sarif-multitool validate` exited 0 on every broken file it
+was given: a missing required property, a missing `version`, a file that is not JSON, a result
+`level` of `fatal` and a `columnKind` of `bytes`. It printed the first three as errors and then
+`Analysis completed successfully.`; it did not report the last two at all. The step is replaced by a
+test that validates the CLI's SARIF against the vendored OASIS 2.1.0 schema with ajv, formats
+included, and a test for each of five defects that the check must reject. Both directions were
+broken on purpose to watch them fail (#43). Nothing in the published package changes.
+
 ## 0.1.7 (2026-09-22)
 
 **The release gate died on npm 12 and forbade the entry you are reading.** `npm pack --dry-run
