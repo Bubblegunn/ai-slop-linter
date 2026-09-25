@@ -4,6 +4,7 @@ import { dashes } from "./rules/dashes.js";
 import { notXButY, triad, reveal, ingTail, inflated } from "./rules/constructions.js";
 import { aiVocabulary, sales, filler } from "./rules/vocabulary.js";
 import { chatbot, announcing, closer, challenges, vagueSource, cutoff } from "./rules/residue.js";
+import { referenceMarkup } from "./rules/reference-markup.js";
 import { boldLabel, titleCase, emoji, curlyQuotes, hyphenDensity } from "./rules/formatting.js";
 
 export type { Doc, Finding, Fix, Rule, Severity } from "./doc.js";
@@ -31,6 +32,7 @@ export const rules: Rule[] = [
   titleCase,
   challenges,
   hyphenDensity,
+  referenceMarkup,
 ];
 
 /**

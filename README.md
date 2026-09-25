@@ -70,18 +70,18 @@ outcomes, with the scores and the dates, are in
 
 ## What it looks like
 
-Real output on [`test/fixtures/sloppy.md`](test/fixtures/sloppy.md), a 259-word file
+Real output on [`test/fixtures/sloppy.md`](test/fixtures/sloppy.md), a 271-word file
 written to trip every rule once (first eleven of fifty findings):
 
 ```
-test/fixtures/sloppy.md  F (score 194.2, 259 words, 50 findings)
+test/fixtures/sloppy.md  F (score 196.7, 271 words, 51 findings)
      5:1   info    title-case-heading   Title Case heading; sentence case reads as written by a person
      7:1   warning announcing           "Let's dive into": make the point instead of announcing it
      7:26  error   dash                 em dash
      7:32  warning inflated             "is a testament to": say what happened; let the reader judge the importance
      7:37  warning ai-vocabulary        "testament": a word models reach for; use the plain one
      7:72  warning ai-vocabulary        "In today's fast-paced": a word models reach for; use the plain one
-     7:83  info    hyphen-density       7.7 hyphenated compounds per 100 words; drop the hyphen after the noun ("the report is high quality")
+     7:83  info    hyphen-density       7.4 hyphenated compounds per 100 words; drop the hyphen after the noun ("the report is high quality")
      7:115 warning inflated             "stands as a": say what happened; let the reader judge the importance
      7:127 warning inflated             "pivotal moment": say what happened; let the reader judge the importance
      7:127 warning ai-vocabulary        "pivotal": a word models reach for; use the plain one
@@ -163,7 +163,7 @@ excerpt is the reliable part, and the column is for the tool that jumps to it.
 
 ## The rules
 
-Twenty rules. Most come from the Wikipedia guideline
+Twenty-one rules. Most come from the Wikipedia guideline
 [Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing),
 written by editors who review thousands of machine-written edits; the two marked "house"
 are ours. Run `npx ai-slop-linter --rules` for the same list from the binary, and
@@ -217,6 +217,7 @@ actually trips the rule it illustrates.
 | `title-case-heading` | info | Every Word Capitalised In A Heading (ALL CAPS is left alone) | |
 | `challenges-section` | info | a `Challenges and future outlook` section | |
 | `hyphen-density` | info | more than three hyphenated compounds per hundred words | |
+| `reference-markup` | error | internal citation and rendering residue such as `contentReference`, `oaicite`, `turn0search0`, `grok_card`, `attached_file` and related markers | |
 
 Fenced code, inline code, front matter, link targets, URLs, HTML tags and comments are
 masked before any rule runs, so a dash in a code sample is never a finding.
@@ -580,7 +581,7 @@ own rules that way: the curly quotes that flagged Jane Austen, and a `filler` ma
   says the tells are absent; it says nothing about who typed.
 - Meaning. It cannot tell a hollow paragraph from a good one when the hollow one
   avoids every listed phrase. Text that passes can still be empty.
-- Style outside the list. Twenty rules cover the patterns editors flag most; a
+- Style outside the list. Twenty-one rules cover the patterns editors flag most; a
   writer with a different tell passes. Add a rule when you find one.
 - Other languages. The vocabulary rules are English; the structural ones (dashes,
   quotes, bold labels, emoji, headings) work anywhere. The machinery for a second rule

@@ -21,6 +21,22 @@ test("the clean fixture has no error-severity findings and grades A", () => {
   assert.equal(r.grade, "A", `score ${r.score}: ${JSON.stringify(r.findings)}`);
 });
 
+test("reference markup: residue is flagged but documented tokens stay masked", () => {
+  const text = [
+    "The answer left :contentReference[oaicite:0]{index=0} in the prose.",
+    "The token `contentReference` is documented in code.",
+    "The token `oaicite` is also documented in code.",
+    "https://example.com/contentReference/oaicite",
+    "",
+    "```",
+    "turn0search0 and grok_card and attached_file",
+    "```",
+  ].join("\n");
+  const findings = lintText("reference.md", text).findings.filter((f) => f.rule === "reference-markup");
+  assert.equal(findings.length, 1, JSON.stringify(findings));
+  assert.equal(findings[0]?.excerpt, "The answer left :contentReference[oaicite:0]{index=0} in the prose.");
+});
+
 test("masking: patterns inside code blocks, inline code, URLs and front matter are not flagged", () => {
   const r = lintText("s.md", sloppy);
   const codeLines = new Set<number>();

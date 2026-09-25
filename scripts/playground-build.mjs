@@ -37,6 +37,7 @@ const ENGINE = [
   "rules/constructions.js",
   "rules/vocabulary.js",
   "rules/residue.js",
+  "rules/reference-markup.js",
   "rules/formatting.js",
 ];
 
@@ -69,7 +70,7 @@ const SAMPLES = [
   {
     id: "sloppy",
     label: "The test fixture (every rule at once)",
-    note: "test/fixtures/sloppy.md, written to trip all twenty rules once. Nobody would write this.",
+    note: "test/fixtures/sloppy.md, written to trip all twenty-one rules once. Nobody would write this.",
     file: "test/fixtures/sloppy.md",
   },
   {
