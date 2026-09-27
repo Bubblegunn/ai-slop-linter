@@ -47,6 +47,12 @@ test("reference markup: every alternative is covered individually and masked tok
     assert.equal(findings.length, 1, line);
   }
 
+  // Counting findings cannot tell the specific alternatives from the general ones they contain:
+  // `attached_file` alone also matches `[attached_file:1]`. The message names what matched.
+  const named = (line: string) => lintText("reference.md", line).findings.find((f) => f.rule === "reference-markup")?.message ?? "";
+  assert.match(named("The answer includes [attached_file:1] in prose."), /^"\[attached_file:1\]"/);
+  assert.match(named("The answer includes \uEA012\uEA02 in prose."), /^"U\+EA012U\+EA02"/);
+
   const masked = lintText(
     "reference.md",
     [

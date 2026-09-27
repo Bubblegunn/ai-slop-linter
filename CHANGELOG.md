@@ -2,6 +2,20 @@
 
 ## 0.1.8 (unreleased)
 
+**A rule for the markup chatbots leave behind when their answers are copied.** `reference-markup`
+(`error`) reports internal citation and rendering tokens such as `:contentReference[oaicite:0]{index=0}`,
+`oai_citation`, `turn0search0`, `grok_card` and `[attached_file:1]`, which the guideline's "Reference
+markup bugs" subsection documents and no earlier rule covered. It is an error rather than a warning
+because the tokens are machine residue, not a matter of style. Each of the seventeen alternatives
+is listed in the guideline, and each has its own test line, so deleting any one of them fails the
+suite. Tokens inside code, URLs and fenced blocks are masked and stay silent, so a document that
+explains the bug does not trip it. Written by [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan)
+([#46](https://github.com/Bubblegunn/ai-slop-linter/pull/46), closes
+[#14](https://github.com/Bubblegunn/ai-slop-linter/issues/14)), who also did the wiring that is easy
+to forget: the package allowlist, the hosted playground's engine and the rule counts in the
+documentation. Measured on the human corpus it fires zero times, which is what `bench/PRECISION.md`
+now records.
+
 **The SARIF check in CI could not fail.** `sarif-multitool validate` exited 0 on every broken file it
 was given: a missing required property, a missing `version`, a file that is not JSON, a result
 `level` of `fatal` and a `columnKind` of `bytes`. It printed the first three as errors and then
