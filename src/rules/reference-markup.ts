@@ -20,7 +20,9 @@ export const referenceMarkup: Rule = {
       doc,
       referenceMarkup,
       /(?::contentReference\[oaicite:\d+\]\{index=\d+\}|contentReference|oaicite|oai_citation|attributableIndex|Example\+\d+|turn\d+(?:search|image|news|file)\d+|\[cite:\s*\d+(?:,\s*\d+)*\]|\[span_\d+\]\(|grok[_-]card|grok_render_citation_card_json|\[attached_file:\d+\]|attached_file|ppl-ai-file-upload|〖\d+†L\d+-\d+〗|\d+|:::writing\b)/gu,
-      (m) => `"${m[0]}": internal reference markup residue; remove the marker and restore the intended reference`,
+      // The private-use markers render as nothing, so name them rather than quote an invisible character.
+      (m) =>
+        `"${m[0].replace(/[\uE000-\uF8FF]/gu, (c) => `U+${c.codePointAt(0)!.toString(16).toUpperCase()}`)}": internal reference markup residue; remove the marker and restore the intended reference`,
     );
   },
 };

@@ -71,7 +71,7 @@ outcomes, with the scores and the dates, are in
 ## What it looks like
 
 Real output on [`test/fixtures/sloppy.md`](test/fixtures/sloppy.md), a 271-word file
-written to trip every rule once (first eleven of fifty findings):
+written to trip every rule once (first eleven of fifty-one findings):
 
 ```
 test/fixtures/sloppy.md  F (score 196.7, 271 words, 51 findings)
