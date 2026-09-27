@@ -21,6 +21,46 @@ test("the clean fixture has no error-severity findings and grades A", () => {
   assert.equal(r.grade, "A", `score ${r.score}: ${JSON.stringify(r.findings)}`);
 });
 
+test("reference markup: every alternative is covered individually and masked tokens stay ignored", () => {
+  const cases = [
+    "The answer left :contentReference[oaicite:0]{index=0} in the prose.",
+    "The answer mentions contentReference in prose.",
+    "The answer mentions oaicite in prose.",
+    "The answer mentions oai_citation in prose.",
+    "The answer mentions attributableIndex in prose.",
+    "The answer mentions Example+1 in prose.",
+    "The answer mentions turn0search0 in prose.",
+    "The answer includes [cite: 1, 2] in prose.",
+    "The answer includes [span_0](start_span) in prose.",
+    "The answer includes grok_card in prose.",
+    "The answer includes grok_render_citation_card_json in prose.",
+    "The answer includes [attached_file:1] in prose.",
+    "The answer mentions attached_file in prose.",
+    "The answer mentions ppl-ai-file-upload in prose.",
+    "The answer includes 〖1†L2-3〗 in prose.",
+    "The answer includes 2 in prose.",
+    "The answer includes :::writing metadata in prose.",
+  ];
+
+  for (const line of cases) {
+    const findings = lintText("reference.md", line).findings.filter((f) => f.rule === "reference-markup");
+    assert.equal(findings.length, 1, line);
+  }
+
+  const masked = lintText(
+    "reference.md",
+    [
+      "The token `contentReference` is documented in code.",
+      "https://example.com/contentReference/oaicite",
+      "```",
+      "turn0search0 and grok_card and attached_file",
+      "```",
+    ].join("\n"),
+  ).findings.filter((f) => f.rule === "reference-markup");
+  assert.deepEqual(masked, []);
+});
+
+
 test("masking: patterns inside code blocks, inline code, URLs and front matter are not flagged", () => {
   const r = lintText("s.md", sloppy);
   const codeLines = new Set<number>();

@@ -19,6 +19,8 @@ dist/src/rules/dashes.d.ts
 dist/src/rules/dashes.js
 dist/src/rules/formatting.d.ts
 dist/src/rules/formatting.js
+dist/src/rules/reference-markup.d.ts
+dist/src/rules/reference-markup.js
 dist/src/rules/residue.d.ts
 dist/src/rules/residue.js
 dist/src/rules/vocabulary.d.ts

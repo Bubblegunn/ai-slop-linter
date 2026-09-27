@@ -43,7 +43,7 @@ author, its date, its source and its licence.
 ## Per rule, per language
 
 Findings per 1,000 words. Only the rules that fire somewhere have a column here; the
-17 that fire nowhere in this corpus are listed below the table.
+18 that fire nowhere in this corpus are listed below the table.
 
 | rule | severity | German | English | Spanish | Finnish | French | Hungarian | Italian | Japanese | Dutch | Polish | Portuguese | Russian | Turkish | Chinese |
 |---|---|---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---:|
@@ -51,7 +51,7 @@ Findings per 1,000 words. Only the rules that fire somewhere have a column here;
 | `not-x-but-y` | warning | 0 | 0.2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | `ai-vocabulary` | warning | 0 | 0.2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
-Silent on every language in this corpus: `chatbot`, `cutoff-disclaimer`, `triad`, `reveal`, `ing-tail`, `inflated`, `sales`, `vague-source`, `announcing`, `closer`, `bold-label`, `emoji`, `filler`, `curly-quotes`, `title-case-heading`, `challenges-section`, `hyphen-density`.
+Silent on every language in this corpus: `chatbot`, `cutoff-disclaimer`, `triad`, `reveal`, `ing-tail`, `inflated`, `sales`, `vague-source`, `announcing`, `closer`, `bold-label`, `emoji`, `filler`, `curly-quotes`, `title-case-heading`, `challenges-section`, `hyphen-density`, `reference-markup`.
 A rule that fires nowhere here is not thereby safe; it means this corpus does not
 exercise it. These files are continuous prose, so the rules that need a heading, a bold
 label, a list marker or an emoji have nothing to match, whatever language they are in.
