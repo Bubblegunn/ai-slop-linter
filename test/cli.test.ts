@@ -77,7 +77,8 @@ const gfmCells = (row: string): string[] => {
   return cells.slice(1, -1).map((c) => c.trim().replace(/\\([!-/:-@[-`{-~])/g, "$1"));
 };
 
-test("markdown format keeps a backslash before a pipe inside its cell", async () => {
+// Windows forbids both `\\` and `|` in a file name, so the file this test needs cannot exist there.
+test("markdown format keeps a backslash before a pipe inside its cell", { skip: process.platform === "win32" ? "Windows forbids \\ and | in file names" : false }, async () => {
   // A backslash in a path or message was copied through, so `a\|b` became `a\\|b`: an
   // escaped backslash followed by a bare pipe, which splits the cell and shifts every column.
   const dir = await mkdtemp(join(tmpdir(), "slop-"));
