@@ -41,14 +41,26 @@ export const dashes: Rule = {
       // retried from every position of a long run of spaces, so 100,000 spaces took 4.5 s
       // (test/perf.test.ts). Matches are unchanged: compared on every Markdown file in the
       // repository and 200,000 generated strings of spaces, tabs, dashes and digits.
-      /(?:(?<![ \t])[ \t]+)?(?:—+|–(?!\d)|(?<=\s)--(?=\s)|(?<!^[ \t]*) - )[ \t]*/gm,
+      // The list-marker exclusion is done after matching (isListMarker) rather than with a
+      // `(?<!^[ \t]*)` lookbehind: V8 before Node 24 re-scanned that lookbehind from every position
+      // of a run of spaces, so 100,000 spaces still took over 3 s on Node 20 and 22 in CI.
+      /(?:(?<![ \t])[ \t]+)?(?:—+|–(?!\d)|(?<=\s)--(?=\s)| - )[ \t]*/gm,
       (m) => (m[0].includes("—") ? "em dash" : m[0].trim() === "--" ? "double hyphen used as a dash" : m[0].includes("–") ? "en dash used as a dash" : "spaced hyphen used as a dash"),
       (m) => fixFor(doc, m),
     );
-    // en dash between digits is a range: drop those matches
-    return em.filter((f) => !isRange(doc, f));
+    // en dash between digits is a range, and a hyphen preceded only by indentation is a list
+    // marker: drop those matches
+    return em.filter((f) => !isRange(doc, f) && !isListMarker(doc, f));
   },
 };
+
+function isListMarker(doc: Doc, f: Finding): boolean {
+  if (f.message !== "spaced hyphen used as a dash") return false;
+  const lineStart = doc.lineStarts[f.line - 1]!;
+  const start = lineStart + f.column - 1;
+  const hyphen = doc.masked.indexOf("-", start);
+  return !/[^ \t]/.test(doc.masked.slice(lineStart, hyphen));
+}
 
 function isRange(doc: Doc, f: Finding): boolean {
   const start = doc.lineStarts[f.line - 1]! + f.column - 1;
