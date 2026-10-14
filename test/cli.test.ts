@@ -68,9 +68,10 @@ const gfmCells = (row: string): string[] => {
   const cells: string[] = [];
   let cur = "";
   for (let i = 0; i < row.length; i++) {
-    if (row[i] === "\\" && i + 1 < row.length) { cur += row[i] + row[i + 1]; i++; }
-    else if (row[i] === "|") { cells.push(cur); cur = ""; }
-    else cur += row[i];
+    const ch = row.charAt(i);
+    if (ch === "\\" && i + 1 < row.length) { cur += ch + row.charAt(i + 1); i++; }
+    else if (ch === "|") { cells.push(cur); cur = ""; }
+    else cur += ch;
   }
   cells.push(cur);
   return cells.slice(1, -1).map((c) => c.trim().replace(/\\([!-/:-@[-`{-~])/g, "$1"));
@@ -87,8 +88,8 @@ test("markdown format keeps a backslash before a pipe inside its cell", async ()
     const rows = m.out.split("\n").filter((l) => l.startsWith(`| ${name.slice(0, 1)}`));
     assert.equal(rows.length, 3, m.out);
     for (const row of rows) assert.equal(gfmCells(row).length, 4, row);
-    assert.equal(gfmCells(rows[0])[0], name);
-    assert.equal(gfmCells(rows[1])[0], `${name}:1`);
+    assert.equal(gfmCells(rows[0] ?? "")[0], name);
+    assert.equal(gfmCells(rows[1] ?? "")[0], `${name}:1`);
     // Text without a backslash renders exactly as before.
     assert.match(run(["-", "--format", "markdown"], { input: "Let's dive in — now.\n" }).out, /^\| stdin:1 \| dash \| error \| em dash[^|\\]*\|$/m);
   } finally {
