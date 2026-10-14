@@ -6,7 +6,7 @@ branding:
   color: gray-dark
 inputs:
   files:
-    description: Space-separated files or globs to lint. Default is every .md file changed in the pull request (or every .md file on other events).
+    description: Files or globs to lint, separated by spaces, or one per line when a path contains a space. A path that does not exist fails the run. Default is every .md file changed in the pull request (or every .md file on other events).
     required: false
     default: ""
   pr-body:
@@ -14,7 +14,7 @@ inputs:
     required: false
     default: "true"
   comment:
-    description: Post one comment on the pull request with the findings table, updated in place on every run. Needs `pull-requests: write`. Set to "false" for annotations only.
+    description: 'Post one comment on the pull request with the findings table, updated in place on every run. Needs `pull-requests: write`. Set to "false" for annotations only.'
     required: false
     default: "true"
   baseline:
@@ -33,6 +33,10 @@ inputs:
     description: ai-slop-linter version to run.
     required: false
     default: "0.1.7"
+  package:
+    description: For testing this Action. An npm package spec to run in place of the published `version`, such as a directory or a tarball from `npm pack`. Leave empty.
+    required: false
+    default: ""
 outputs:
   findings:
     description: Total number of findings across the files and the pull request text.
@@ -55,6 +59,7 @@ runs:
         MAX: ${{ inputs.max-score }}
         WARN: ${{ inputs.warn-only }}
         VERSION: ${{ inputs.version }}
+        PACKAGE: ${{ inputs.package }}
       run: |
         set -uo pipefail
         flags=(--max-score "$MAX")
@@ -63,8 +68,28 @@ runs:
 
         # Targets: the given files, else the Markdown the pull request changed, else everything.
         if [ -n "$FILES" ]; then
-          # shellcheck disable=SC2086
-          set -- $FILES
+          if [[ "$FILES" == *$'\n'* ]]; then
+            # One path or glob per line, so a path may contain spaces. Globs reach the CLI unexpanded.
+            targets=()
+            while IFS= read -r f; do
+              f="${f#"${f%%[![:space:]]*}"}"
+              f="${f%"${f##*[![:space:]]}"}"
+              [ -n "$f" ] && targets+=("$f")
+            done <<< "$FILES"
+            set -- ${targets[@]+"${targets[@]}"}
+          else
+            # shellcheck disable=SC2086
+            set -- $FILES
+          fi
+          # A path the CLI cannot find is skipped without a word when other paths match, so a
+          # path with a space in it, split in two above, used to lint nothing and pass.
+          for f in "$@"; do
+            case "$f" in *[*?[{]* | -) continue ;; esac
+            if [ ! -e "$f" ]; then
+              echo "::error title=ai-slop-linter::files: \"$f\" does not exist. The files input is split on spaces; to lint a path that contains a space, put one path per line (files: |)."
+              exit 2
+            fi
+          done
         elif [ -n "${PR:-}" ]; then
           changed=()
           while IFS= read -r f; do [ -n "$f" ] && changed+=("$f"); done < <(gh pr diff "$PR" --name-only | grep -Ei '\.(md|mdx|markdown)$' || true)
@@ -85,10 +110,18 @@ runs:
           exit 0
         fi
 
-        run() { printf '%s\n' "$pr_text" | npx --yes "ai-slop-linter@${VERSION}" "${flags[@]}" "$@"; }
-        # Annotations on the files tab; this exit code is the job's verdict.
-        run --format github "$@"
-        status=$?
+        run() {
+          if [ -n "${PACKAGE:-}" ]; then
+            printf '%s\n' "$pr_text" | npx --yes --package "$PACKAGE" -- ai-slop-linter "${flags[@]}" "$@"
+          else
+            printf '%s\n' "$pr_text" | npx --yes "ai-slop-linter@${VERSION}" "${flags[@]}" "$@"
+          fi
+        }
+        # Annotations on the files tab; this exit code is the job's verdict. GitHub runs `shell: bash`
+        # with -e, so a bare failing command here ended the step before the findings output and the
+        # review comment were written, which is exactly the run that needs them.
+        status=0
+        run --format github "$@" || status=$?
         # Findings count and the comment body, from the same run in other formats.
         count=$(run --format json --warn "$@" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).reduce((n,r)=>n+r.findings.length,0)))')
         echo "findings=${count}" >> "$GITHUB_OUTPUT"

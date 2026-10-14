@@ -364,7 +364,7 @@ jobs:
 
 | input | default | what it does |
 |---|---|---|
-| `files` | changed `.md` files | Files or globs to lint instead of the changed Markdown |
+| `files` | changed `.md` files | Files or globs to lint instead of the changed Markdown, separated by spaces, or one per line (`files: \|`) when a path contains a space; a path that does not exist fails the run |
 | `pr-body` | `true` | Lint the title and description as one more text |
 | `comment` | `true` | Post and update the review comment; needs `pull-requests: write` |
 | `baseline` | none | A file from `--baseline-write`; only new findings fail |

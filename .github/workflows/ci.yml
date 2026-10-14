@@ -90,6 +90,108 @@ jobs:
       - run: node bench/precision.mjs --check
       - run: node bench/typography.mjs --check
       - run: node scripts/readme-demo.mjs --check
+  action:
+    # The composite Action itself, run with `uses: ./` against the package built from this
+    # commit (the `package` input), so the bash in action.yml is tested before it ships and not
+    # by the first user whose run breaks. test/action.test.mjs covers its argument handling in
+    # more cases; this job proves the real Action wiring: the findings output, the exit code
+    # and warn-only, on the fixtures. zizmor 1.30 prefers GitHub's `$/` self-repository form
+    # (July 2026) to `./`; it can replace `./` once it has been tried in this job.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - name: Pack this commit, and count the sloppy fixture's findings with the CLI
+        id: prep
+        run: |
+          echo "tarball=$PWD/$(npm pack --ignore-scripts --silent | tail -n 1)" >> "$GITHUB_OUTPUT"
+          count=$(node dist/src/cli.js --format json --warn test/fixtures/sloppy.md | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).reduce((n,r)=>n+r.findings.length,0)))')
+          echo "expected=$count" >> "$GITHUB_OUTPUT"
+          mkdir -p "space dir"
+          cp test/fixtures/sloppy.md "space dir/sloppy copy.md"
+      - name: Sloppy fixture, warn-only
+        id: sloppy
+        uses: ./ # zizmor: ignore[self-repository] the checkout above is this commit
+        with:
+          files: test/fixtures/sloppy.md
+          warn-only: "true"
+          comment: "false"
+          pr-body: "false"
+          package: ${{ steps.prep.outputs.tarball }}
+      - name: Sloppy fixture, failing
+        id: strict
+        continue-on-error: true
+        uses: ./ # zizmor: ignore[self-repository] the checkout above is this commit
+        with:
+          files: test/fixtures/sloppy.md
+          warn-only: "false"
+          comment: "false"
+          pr-body: "false"
+          package: ${{ steps.prep.outputs.tarball }}
+      - name: Clean fixture
+        id: clean
+        continue-on-error: true
+        uses: ./ # zizmor: ignore[self-repository] the checkout above is this commit
+        with:
+          files: test/fixtures/clean.md
+          warn-only: "false"
+          comment: "false"
+          pr-body: "false"
+          package: ${{ steps.prep.outputs.tarball }}
+      - name: A path with a space, one per line
+        id: spaced
+        continue-on-error: true
+        uses: ./ # zizmor: ignore[self-repository] the checkout above is this commit
+        with:
+          files: |
+            space dir/sloppy copy.md
+          warn-only: "true"
+          comment: "false"
+          pr-body: "false"
+          package: ${{ steps.prep.outputs.tarball }}
+      - name: A path with a space on one line is rejected
+        id: spaced-one-line
+        continue-on-error: true
+        uses: ./ # zizmor: ignore[self-repository] the checkout above is this commit
+        with:
+          files: space dir/sloppy copy.md
+          warn-only: "true"
+          comment: "false"
+          pr-body: "false"
+          package: ${{ steps.prep.outputs.tarball }}
+      - name: The outputs and outcomes are the ones the Action promises
+        run: |
+          fail=0
+          check() { if [ "$2" = "$3" ]; then echo "ok: $1"; else echo "::error::$1: expected '$3', got '$2'"; fail=1; fi; }
+          [ "$EXPECTED" -gt 0 ] || { echo "::error::the CLI counted no findings on the sloppy fixture, so the comparison below proves nothing"; fail=1; }
+          check "warn-only run passes" "$SLOPPY_OUTCOME" success
+          check "findings output equals the CLI's --format json count" "$SLOPPY" "$EXPECTED"
+          check "warn-only false fails on the sloppy fixture" "$STRICT_OUTCOME" failure
+          check "the failing run still reports the same count" "$STRICT" "$EXPECTED"
+          check "clean fixture passes" "$CLEAN_OUTCOME" success
+          check "clean fixture has 0 findings" "$CLEAN" 0
+          check "a path with a space, one per line, is linted" "$SPACED_OUTCOME" success
+          check "and counted" "$SPACED" "$EXPECTED"
+          check "a path with a space on one line is rejected" "$SPACED_ONE_LINE_OUTCOME" failure
+          exit "$fail"
+        env:
+          EXPECTED: ${{ steps.prep.outputs.expected }}
+          SLOPPY: ${{ steps.sloppy.outputs.findings }}
+          SLOPPY_OUTCOME: ${{ steps.sloppy.outcome }}
+          STRICT: ${{ steps.strict.outputs.findings }}
+          STRICT_OUTCOME: ${{ steps.strict.outcome }}
+          CLEAN: ${{ steps.clean.outputs.findings }}
+          CLEAN_OUTCOME: ${{ steps.clean.outcome }}
+          SPACED: ${{ steps.spaced.outputs.findings }}
+          SPACED_OUTCOME: ${{ steps.spaced.outcome }}
+          SPACED_ONE_LINE_OUTCOME: ${{ steps.spaced-one-line.outcome }}
   coverage:
     # Node's built-in coverage over the shipped dist/src, on one leg. scripts/coverage.mjs holds
     # the thresholds and checks them itself, because Node reads its own threshold flags as whole
@@ -108,9 +210,9 @@ jobs:
   ci-ok:
     # The one check the branch ruleset requires; it fails if any job above failed or was cancelled.
     if: always()
-    needs: [test, package, release-gate, bench, coverage]
+    needs: [test, package, release-gate, bench, coverage, action]
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "test: ${{ needs.test.result }}  package: ${{ needs.package.result }}  release-gate: ${{ needs.release-gate.result }}  bench: ${{ needs.bench.result }}  coverage: ${{ needs.coverage.result }}"
-          test "${{ needs.test.result }}" = success && test "${{ needs.package.result }}" = success && test "${{ needs.release-gate.result }}" = success && test "${{ needs.bench.result }}" = success && test "${{ needs.coverage.result }}" = success
+          echo "test: ${{ needs.test.result }}  package: ${{ needs.package.result }}  release-gate: ${{ needs.release-gate.result }}  bench: ${{ needs.bench.result }}  coverage: ${{ needs.coverage.result }}  action: ${{ needs.action.result }}"
+          test "${{ needs.test.result }}" = success && test "${{ needs.package.result }}" = success && test "${{ needs.release-gate.result }}" = success && test "${{ needs.bench.result }}" = success && test "${{ needs.coverage.result }}" = success && test "${{ needs.action.result }}" = success

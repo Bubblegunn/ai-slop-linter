@@ -56,6 +56,30 @@ does. Each was run against the real 0.1.7 tags (pass) and against wrong ones: `v
 `v0` is elsewhere; `v0.1.5`, which has no pre-commit tag; and a tree without the build (all
 failed). `left-pad@1.3.0`, which has a signature and no provenance, failed the first check.
 
+**The Action's metadata file did not parse, and a failing run lost its findings and its
+comment.** Two faults in `action.yml`, both in every release since 0.1.0, found by running the
+Action in CI for the first time. The `comment` input's description was an unquoted YAML value
+containing `pull-requests: write`, and a colon followed by a space ends an unquoted value: PyYAML
+and Ruby's Psych both reject the file at line 17, column 131. It is quoted now, and a test fails
+on any unquoted value with `: ` or ` #` in it. Second, GitHub runs a composite step's bash with
+`-e`, so when the lint found an error-severity tell and returned 1, the step ended on that line:
+the `findings` output was never written and the review comment was never posted or updated, on
+exactly the pull requests that needed them. The exit code is now captured and returned at the
+end.
+
+**`files` accepts a path with a space.** The input was split on spaces, so `docs/my notes.md`
+became two paths that do not exist, and the CLI skips a missing path without a word when another
+one matches. One path or glob per line (`files: |`) now keeps spaces, and on either form a path
+that does not exist fails the run with a message that says how to pass it. A one-line value
+without such a path behaves as before. A new `package` input runs a local package in place of the
+published `version`; it exists so the new `action` CI job can run `uses: ./` against the package
+built from the same commit, and checks the `findings` output against the CLI's own count, that
+`warn-only: "false"` fails on the sloppy fixture, that the clean fixture reports 0, and both
+forms of a path with a space. `test/action.test.mjs` runs the Action's script the way GitHub
+runs it, with `-eo pipefail`. Each check was run against a broken copy of `action.yml` (the old
+splitting, a count off by one, `exit 0`, the old exit handling, the unquoted description) and
+failed.
+
 ## 0.1.7 (2026-09-22)
 
 **The release gate died on npm 12 and forbade the entry you are reading.** `npm pack --dry-run
