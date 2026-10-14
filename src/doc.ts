@@ -289,15 +289,18 @@ export function position(doc: Doc, offset: number): { line: number; column: numb
 
 /** The original text of the line containing `offset`, trimmed to a readable excerpt around it. */
 export function excerptAt(doc: Doc, offset: number, length: number): string {
+  // The line's end comes from lineStarts, and only the excerpt is sliced. Searching for the
+  // newline and slicing the whole line on every finding made a long line with many findings
+  // quadratic: 100,000 en dashes on one line took 4 s in test/perf.test.ts.
   const { line } = position(doc, offset);
   const start = doc.lineStarts[line - 1]!;
-  const end = doc.text.indexOf("\n", start);
-  const lineText = doc.text.slice(start, end === -1 ? undefined : end);
-  if (lineText.length <= 100) return lineText.trim();
+  const next = doc.lineStarts[line];
+  const lineLength = (next === undefined ? doc.text.length : next - 1) - start;
+  if (lineLength <= 100) return doc.text.slice(start, start + lineLength).trim();
   const col = offset - start;
   const from = Math.max(0, col - 40);
-  const to = Math.min(lineText.length, col + length + 40);
-  return `${from > 0 ? "…" : ""}${lineText.slice(from, to).trim()}${to < lineText.length ? "…" : ""}`;
+  const to = Math.min(lineLength, col + length + 40);
+  return `${from > 0 ? "…" : ""}${doc.text.slice(start + from, start + to).trim()}${to < lineLength ? "…" : ""}`;
 }
 
 /** Run a regex over the masked text and turn every match into a finding. */

@@ -1,5 +1,5 @@
 import type { Doc, Finding, Rule } from "../doc.js";
-import { scan } from "../doc.js";
+import { position, scan } from "../doc.js";
 
 const WIKI = "Wikipedia, Signs of AI writing: Em dashes";
 
@@ -37,7 +37,11 @@ export const dashes: Rule = {
       // ("  - two") is a hyphen preceded only by indentation, which is a bullet, not a dash.
       // A run of em dashes is one mark, not one finding per character: the Chinese 破折号 is
       // written as two em dashes and was reported twice.
-      /[ \t]*(?:—+|–(?!\d)|(?<=\s)--(?=\s)|(?<!^[ \t]*) - )[ \t]*/gm,
+      // Leading whitespace is taken only from the start of a run. A bare leading `[ \t]*` was
+      // retried from every position of a long run of spaces, so 100,000 spaces took 4.5 s
+      // (test/perf.test.ts). Matches are unchanged: compared on every Markdown file in the
+      // repository and 200,000 generated strings of spaces, tabs, dashes and digits.
+      /(?:(?<![ \t])[ \t]+)?(?:—+|–(?!\d)|(?<=\s)--(?=\s)|(?<!^[ \t]*) - )[ \t]*/gm,
       (m) => (m[0].includes("—") ? "em dash" : m[0].trim() === "--" ? "double hyphen used as a dash" : m[0].includes("–") ? "en dash used as a dash" : "spaced hyphen used as a dash"),
       (m) => fixFor(doc, m),
     );
@@ -56,9 +60,10 @@ function isRange(doc: Doc, f: Finding): boolean {
 function fixFor(doc: Doc, m: RegExpMatchArray): string | null {
   const start = m.index!;
   const before = doc.masked.slice(Math.max(0, start - 1), start);
-  const lineStart = doc.masked.lastIndexOf("\n", start - 1) + 1;
-  const prefix = doc.masked.slice(lineStart, start);
-  if (prefix.trim() === "") return null; // dash opening a line: dialogue or a list, leave it
+  // From lineStarts, and a search that stops at the first visible character: finding the
+  // line start with lastIndexOf and trimming the whole prefix was quadratic on a long line.
+  const lineStart = doc.lineStarts[position(doc, start).line - 1]!;
+  if (!/\S/.test(doc.masked.slice(lineStart, start))) return null; // dash opening a line: dialogue or a list, leave it
   if (/[.!?:;,]$/.test(before)) return " "; // ". — Next" becomes ". Next"
   const after = doc.masked.slice(start + m[0].length, start + m[0].length + 1);
   if (after === "" || after === "\n") return "."; // trailing dash at end of line

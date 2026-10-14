@@ -24,6 +24,19 @@ test that validates the CLI's SARIF against the vendored OASIS 2.1.0 schema with
 included, and a test for each of five defects that the check must reject. Both directions were
 broken on purpose to watch them fail (#43). Nothing in the published package changes.
 
+**Two quadratic paths, found by a new run-time test.** `test/perf.test.ts` runs every rule over
+fourteen generated worst-case inputs of about 100,000 characters each (long runs of `-`, `—`,
+`–`, `,`, `**`, spaces and tabs, an unclosed fence, one line with no newline) and fails any rule
+that takes more than a second on one of them. Each rule runs in a worker that is terminated
+when it overruns, so a pattern that never returns fails the test instead of hanging it; a rule
+rewritten to `(a+)+$` was used to check that. On the first run it found two real faults. `dash`
+retried its leading whitespace from every position of a run of spaces, so a file of 100,000
+spaces took 4.5 s. And the excerpt every finding carries, with the line-start check in the dash
+fix, re-read the whole line once per finding, so 100,000 en dashes on one line took 3 to 5 s.
+Both are now linear: the slowest rule on any of the inputs takes 40 ms on the same laptop. The
+findings and fixes are unchanged, compared on every Markdown file in the repository and on
+30,000 generated strings.
+
 ## 0.1.7 (2026-09-22)
 
 **The release gate died on npm 12 and forbade the entry you are reading.** `npm pack --dry-run
