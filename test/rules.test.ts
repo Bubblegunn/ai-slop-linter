@@ -282,8 +282,10 @@ test("masking is linear: thousands of unclosed openers do not make prepare quadr
   const normal = "See [the guide](https://x.y/z) and <b>bold</b> <!-- note --> plus `code`.";
   const m = prepare("n.md", normal).masked;
   assert.equal(m.length, normal.length);
-  assert.ok(!m.includes("https://x.y/z") && !m.includes("note") && !m.includes("<b>") && !m.includes("code"));
-  assert.ok(m.includes("the guide") && m.includes("bold"));
+  // The masked text is the input with exactly these spans blanked to spaces of the same length:
+  // the link target, the tags, the comment and the code span go, the link text and "bold" stay.
+  const masked = ["https://x.y/z", "<b>", "</b>", "<!-- note -->", "`code`"];
+  assert.equal(m, masked.reduce((t, span) => t.replace(span, " ".repeat(span.length)), normal));
 });
 
 test("every rule carries the material --explain prints", () => {
