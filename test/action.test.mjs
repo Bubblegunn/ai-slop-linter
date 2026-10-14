@@ -69,6 +69,10 @@ function runAction(cwd, files, { warn = "false" } = {}) {
       WARN: warn,
       VERSION: "0.0.0-not-used",
       PACKAGE: root,
+      // Each run installs the package through npx into its own cache. With the shared cache,
+      // two runs installing the same tarball at once raced on macOS CI (2026-10-14): one ran
+      // `.bin/ai-slop-linter` before the other had made it executable, "Permission denied".
+      npm_config_cache: join(cwd, "npm-cache"),
     },
   });
   const findings = /^findings=(.*)$/m.exec(readFileSync(out, "utf8"))?.[1];
