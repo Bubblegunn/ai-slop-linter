@@ -45,6 +45,17 @@ as a whole number, so 98.9 was enforced as 98 and a run with a test deleted pass
 that test deleted, the new check fails at 98.84 % lines and 89.24 % branches. `npm run coverage`
 runs the same thing locally. Nothing in the published package changes.
 
+**The release workflow checks what Action and pre-commit users receive.** After a publish, the
+smoke job installs the release into an empty project and requires `npm audit signatures` to
+report a verified provenance attestation, not only a registry signature, because the command
+passes a package that has no attestation at all. On Linux it then checks with `git ls-remote`
+that `v0` points at the same commit as the new `vX.Y.Z`, and that the `vX.Y.Z-pre-commit` tag's
+tree contains `dist/src/cli.js`. Both tags are moved by `npm run release` from the maintainer's
+machine, after the tag that starts the workflow, so the checks retry the way the install check
+does. Each was run against the real 0.1.7 tags (pass) and against wrong ones: `v0.1.6`, where
+`v0` is elsewhere; `v0.1.5`, which has no pre-commit tag; and a tree without the build (all
+failed). `left-pad@1.3.0`, which has a signature and no provenance, failed the first check.
+
 ## 0.1.7 (2026-09-22)
 
 **The release gate died on npm 12 and forbade the entry you are reading.** `npm pack --dry-run

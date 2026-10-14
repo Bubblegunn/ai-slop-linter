@@ -53,6 +53,7 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
+          package-manager-cache: false # nothing here should come from a cache a pull request could have written
       - name: npx the released version from the registry
         shell: bash
         run: |
@@ -105,3 +106,78 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
           PKG: ${{ github.event.repository.name }}
+      - name: The installed package carries a verified registry signature and provenance
+        shell: bash
+        run: | # zizmor: ignore[adhoc-packages] installing the just-published version is what this step checks
+          # publishConfig.provenance is on, and nothing checked what users receive. This installs
+          # the release into an empty project and asks npm to verify it. `npm audit signatures`
+          # exits 0 when a package has a registry signature and no attestation at all, so the
+          # attestation line is required explicitly: without it, a publish that lost provenance
+          # would still pass.
+          v="${TAG#v}"
+          dir=$(mktemp -d)
+          cd "$dir"
+          npm init -y >/dev/null
+          attempts=15
+          delay=20
+          i=1
+          until npm install --no-audit --no-fund "$PKG@$v"; do
+            if [ "$i" -ge "$attempts" ]; then echo "npm install $PKG@$v failed $attempts times"; exit 1; fi
+            echo "attempt $i of $attempts did not install; retrying in ${delay}s"
+            i=$((i + 1))
+            sleep "$delay"
+          done
+          out=$(npm audit signatures 2>&1) || { echo "$out"; echo "npm audit signatures failed for $PKG@$v"; exit 1; }
+          echo "$out"
+          case "$out" in
+            *"verified attestation"*) echo "provenance ok: $PKG@$v" ;;
+            *) echo "$PKG@$v has a registry signature but no verified provenance attestation"; exit 1 ;;
+          esac
+        env:
+          TAG: ${{ github.ref_name }}
+          PKG: ${{ github.event.repository.name }}
+      - name: The moving major tag and the pre-commit tag point at this release
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          # scripts/release.mjs moves the major tag (v0) and pushes vX.Y.Z-pre-commit from the
+          # maintainer's machine after the release tag, so the workflow never sees them go wrong.
+          # If either step fails, `uses: ...@v0` and `rev: vX.Y.Z-pre-commit` stay on the old
+          # release with no signal. Retried, because both are pushed after the tag that started
+          # this run.
+          v="${TAG#v}"
+          major="v${v%%.*}"
+          hooks="${TAG}-pre-commit"
+          url="https://github.com/${REPO}.git"
+          # The commit a tag names: the peeled ^{} line for an annotated tag, else the tag itself.
+          commit_of() {
+            local lines
+            lines=$(git ls-remote "$url" "refs/tags/$1" "refs/tags/$1^{}") || return 1
+            printf '%s\n' "$lines" | awk -v t="refs/tags/$1" '$2 == t "^{}" { p = $1 } $2 == t { d = $1 } END { print (p != "" ? p : d) }'
+          }
+          attempts=${ATTEMPTS:-15}
+          delay=${DELAY:-20}
+          i=1
+          while :; do
+            problems=""
+            release=$(commit_of "$TAG") || release=""
+            moving=$(commit_of "$major") || moving=""
+            [ -n "$release" ] || problems="$problems; $TAG does not exist on $url"
+            [ -n "$release" ] && [ "$moving" != "$release" ] && problems="$problems; $major is at '${moving:-missing}', not at $TAG ($release)"
+            tree=$(mktemp -d)
+            if git -C "$tree" init -q && git -C "$tree" fetch -q --depth 1 "$url" "refs/tags/$hooks" 2>/dev/null; then
+              [ "$(git -C "$tree" ls-tree --name-only FETCH_HEAD dist/src/cli.js)" = dist/src/cli.js ] || problems="$problems; $hooks has no dist/src/cli.js, so pre-commit would find no executable"
+            else
+              problems="$problems; $hooks could not be fetched from $url"
+            fi
+            rm -rf "$tree"
+            [ -z "$problems" ] && break
+            echo "attempt $i of $attempts:${problems#;}"
+            if [ "$i" -ge "$attempts" ]; then exit 1; fi
+            i=$((i + 1))
+            sleep "$delay"
+          done
+          echo "tags ok: $major and $TAG at $release, $hooks carries dist/src/cli.js"
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
