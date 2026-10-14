@@ -281,7 +281,9 @@ export function renderGithub(results: LintResult[], maxScore: number): string {
   return out.join("\n");
 }
 
-const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+// Backslashes first: escaping only the pipe turned `a\|b` into `a\\|b`, an escaped backslash
+// followed by a bare pipe, which ends the cell early and shifts every column after it.
+const cell = (s: string) => s.replace(/[\\|]/g, "\\$&").replace(/\r?\n/g, " ");
 
 /** A Markdown table for a pull request comment or an issue; the same facts as the text output. */
 export function renderMarkdown(results: LintResult[], maxScore: number): string {

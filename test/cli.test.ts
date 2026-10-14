@@ -62,6 +62,40 @@ test("markdown format is a pasteable table with the same facts", () => {
   assert.ok(!/\| where \|/.test(clean.out), "no findings table when there is nothing to list");
 });
 
+// Splits a GFM table row the way cmark-gfm does: a backslash escapes the next character, and
+// only an unescaped pipe ends a cell. Then unescapes each cell as Markdown renders it.
+const gfmCells = (row: string): string[] => {
+  const cells: string[] = [];
+  let cur = "";
+  for (let i = 0; i < row.length; i++) {
+    if (row[i] === "\\" && i + 1 < row.length) { cur += row[i] + row[i + 1]; i++; }
+    else if (row[i] === "|") { cells.push(cur); cur = ""; }
+    else cur += row[i];
+  }
+  cells.push(cur);
+  return cells.slice(1, -1).map((c) => c.trim().replace(/\\([!-/:-@[-`{-~])/g, "$1"));
+};
+
+test("markdown format keeps a backslash before a pipe inside its cell", async () => {
+  // A backslash in a path or message was copied through, so `a\|b` became `a\\|b`: an
+  // escaped backslash followed by a bare pipe, which splits the cell and shifts every column.
+  const dir = await mkdtemp(join(tmpdir(), "slop-"));
+  try {
+    const name = "a\\|b.md";
+    await writeFile(join(dir, name), "Let's dive in — now.\n");
+    const m = run([name, "--format", "markdown"], { cwd: dir });
+    const rows = m.out.split("\n").filter((l) => l.startsWith(`| ${name.slice(0, 1)}`));
+    assert.equal(rows.length, 3, m.out);
+    for (const row of rows) assert.equal(gfmCells(row).length, 4, row);
+    assert.equal(gfmCells(rows[0])[0], name);
+    assert.equal(gfmCells(rows[1])[0], `${name}:1`);
+    // Text without a backslash renders exactly as before.
+    assert.match(run(["-", "--format", "markdown"], { input: "Let's dive in — now.\n" }).out, /^\| stdin:1 \| dash \| error \| em dash[^|\\]*\|$/m);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("--fix rewrites the file and reports what it applied", async () => {
   const dir = await mkdtemp(join(tmpdir(), "slop-"));
   try {

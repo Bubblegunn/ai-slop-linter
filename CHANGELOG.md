@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.10 (unreleased)
+
+**`--format markdown` keeps a backslash before a pipe inside its cell.** The table escaped `|` but copied
+`\` through, so a path or message containing `a\|b` came out as `a\\|b`: an escaped backslash followed by a
+bare pipe, which ended the cell early and shifted every column after it. Backslashes are now escaped too. A
+test lints a file named `a\|b.md` and splits each row the way GitHub's table parser does. On the 53
+Markdown and text files in this repository the markdown and JSON output is byte-identical before and after,
+because none of them produces a backslash.
+
 ## 0.1.9 (2026-10-14)
 
 **The Action can be listed on GitHub Marketplace.** Marketplace refused `action.yml` because the description was 148
