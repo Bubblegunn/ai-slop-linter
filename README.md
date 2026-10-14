@@ -12,6 +12,7 @@
   <img src="https://img.shields.io/badge/dependencies-0-111111?style=flat-square" alt="zero dependencies">
   <img src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" alt="MIT">
   <a href="https://doi.org/10.5281/zenodo.22396875"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22396875-111111?style=flat-square" alt="DOI"></a>
+  <a href="https://github.com/marketplace/actions/ai-slop-linter"><img src="https://img.shields.io/badge/GitHub_Marketplace-ai--slop--linter-111111?style=flat-square&logo=github" alt="GitHub Marketplace"></a>
 </p>
 
 **Catch formulaic prose before it reaches your pull request.** Point ai-slop-linter at a
