@@ -5,6 +5,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import AjvDraft04 from "ajv-draft-04";
 import addFormats from "ajv-formats";
 
@@ -61,8 +62,8 @@ test("the CLI emits schema-valid SARIF for paths with spaces and non-ASCII chara
 // backslashes, which must become separators before each segment is encoded (encoded whole, they
 // would be `%5C`), and `$schema` must stay the URL that resolves (the old one answered 404).
 test("a Windows path becomes slash-separated encoded segments, and $schema is the errata01 URL", async () => {
-  const { renderSarif } = await import(join(process.cwd(), "dist", "src", "sarif.js"));
-  const { rules } = await import(join(process.cwd(), "dist", "src", "index.js"));
+  const { renderSarif } = await import(pathToFileURL(join(process.cwd(), "dist", "src", "sarif.js")).href);
+  const { rules } = await import(pathToFileURL(join(process.cwd(), "dist", "src", "index.js")).href);
   const rule = rules[0];
   const finding = { rule: rule.id, severity: rule.severity, line: 1, column: 1, excerpt: "x", message: "m" };
   const result = { path: "docs\\my notes\\café.md", words: 1, findings: [finding], stoodDown: [], score: null, grade: null };
