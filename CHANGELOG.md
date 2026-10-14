@@ -37,6 +37,14 @@ Both are now linear: the slowest rule on any of the inputs takes 40 ms on the sa
 findings and fixes are unchanged, compared on every Markdown file in the repository and on
 30,000 generated strings.
 
+**Coverage is measured in CI.** A `coverage` job runs the suite under Node's built-in coverage and
+fails when lines, branches or functions in `dist/src` fall below 98.96 %, 89.86 % and 98.83 %,
+the values measured on 2026-10-14 on macOS and in a Linux container (they agreed). The script
+checks the thresholds from the lcov totals itself: Node 24 reads its own `--test-coverage-lines`
+as a whole number, so 98.9 was enforced as 98 and a run with a test deleted passed it. With
+that test deleted, the new check fails at 98.84 % lines and 89.24 % branches. `npm run coverage`
+runs the same thing locally. Nothing in the published package changes.
+
 ## 0.1.7 (2026-09-22)
 
 **The release gate died on npm 12 and forbade the entry you are reading.** `npm pack --dry-run
