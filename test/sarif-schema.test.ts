@@ -57,6 +57,21 @@ test("the CLI emits schema-valid SARIF for paths with spaces and non-ASCII chara
   }
 });
 
+// The two parts of #63 that a run on macOS or Linux cannot reach: a Windows path arrives with
+// backslashes, which must become separators before each segment is encoded (encoded whole, they
+// would be `%5C`), and `$schema` must stay the URL that resolves (the old one answered 404).
+test("a Windows path becomes slash-separated encoded segments, and $schema is the errata01 URL", async () => {
+  const { renderSarif } = await import(join(process.cwd(), "dist", "src", "sarif.js"));
+  const { rules } = await import(join(process.cwd(), "dist", "src", "index.js"));
+  const rule = rules[0];
+  const finding = { rule: rule.id, severity: rule.severity, line: 1, column: 1, excerpt: "x", message: "m" };
+  const result = { path: "docs\\my notes\\café.md", words: 1, findings: [finding], stoodDown: [], score: null, grade: null };
+  const log = JSON.parse(renderSarif([result], rules, "0.0.0"));
+  assert.equal(log.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri, "docs/my%20notes/caf%C3%A9.md");
+  assert.equal(log.$schema, "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json");
+  assert.deepEqual(errorsOf(log), []);
+});
+
 // Each of these is the emitted log with one defect. If the validator ever accepts one, the test
 // above is decoration: it would pass whatever the CLI wrote.
 const defects: Array<[string, (log: any) => void]> = [

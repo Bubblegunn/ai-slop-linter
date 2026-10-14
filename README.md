@@ -219,6 +219,8 @@ actually trips the rule it illustrates.
 | `hyphen-density` | info | more than three hyphenated compounds per hundred words | |
 | `reference-markup` | error | internal citation and rendering residue such as `contentReference`, `oaicite`, `turn0search0`, `grok_card`, `attached_file` and related markers | |
 
+`reference-markup` was written by [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan) ([#46](https://github.com/Bubblegunn/ai-slop-linter/pull/46)), with one test line per marker so that deleting any of them fails the suite.
+
 Fenced code, inline code, front matter, link targets, URLs, HTML tags and comments are
 masked before any rule runs, so a dash in a code sample is never a finding.
 
@@ -384,7 +386,7 @@ repos:
   hooks: [{id: ai-slop-markdown}, {id: ai-slop-commit-msg}]
 ```
 
-Run `pre-commit install` for Markdown hooks and `pre-commit install --hook-type commit-msg` for the commit message hook.
+Run `pre-commit install` for Markdown hooks and `pre-commit install --hook-type commit-msg` for the commit message hook. Both hooks were written by [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan) ([#27](https://github.com/Bubblegunn/ai-slop-linter/pull/27)).
 
 **Commit messages.** A `commit-msg` hook refuses a message with an error-severity tell:
 
@@ -622,7 +624,7 @@ button produces correct BibTeX and APA without any copying by hand.
 
 ## GitHub code scanning (SARIF)
 
-Use `--format sarif` to emit SARIF 2.1.0 for GitHub code scanning. Every rule is included in the run metadata with its description and source citation. Severities map directly: `error` to `error`, `warning` to `warning`, and `info` to `note`.
+Use `--format sarif` to emit SARIF 2.1.0 for GitHub code scanning. SARIF output was written by [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan) ([#41](https://github.com/Bubblegunn/ai-slop-linter/pull/41)), who also made file paths with spaces and non-ASCII names valid URIs ([#63](https://github.com/Bubblegunn/ai-slop-linter/pull/63)). Every rule is included in the run metadata with its description and source citation. Severities map directly: `error` to `error`, `warning` to `warning`, and `info` to `note`.
 
 The run declares `utf16CodeUnits` for SARIF columns, matching the tool's documented 1-based UTF-16 column convention. Do not convert these columns to Unicode scalar values.
 
@@ -647,11 +649,10 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "24"
       - run: npm ci
       - run: npm run build
       - run: node dist/src/cli.js --format sarif --warn "**/*.md" > results.sarif
-      - run: npx --yes @microsoft/sarif-multitool validate results.sarif
       - uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: results.sarif
@@ -659,7 +660,7 @@ jobs:
 
 One limit worth knowing before you point this at something unusual: the `artifactLocation.uri` in the output is the path you gave on the command line, so running from outside the repository root can produce `../` segments that code scanning will not accept. The workflow above runs at the root, where that cannot happen.
 
-The validator step is intentional: validate the generated SARIF before upload rather than eyeballing it. The upload requires `security-events: write`; no broader write permission is needed. `--max-score` remains a separate repository policy and is not encoded as SARIF severity.
+An earlier version of this example ran `sarif-multitool validate` before the upload. It is gone because it could not fail: it exited 0 on every broken file it was given ([#43](https://github.com/Bubblegunn/ai-slop-linter/issues/43)). This repository checks its own SARIF against the vendored 2.1.0 schema in `test/sarif-schema.test.ts` instead. The upload requires `security-events: write`; no broader write permission is needed. `--max-score` remains a separate repository policy and is not encoded as SARIF severity.
 
 ## Contributing
 

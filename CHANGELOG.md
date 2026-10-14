@@ -2,7 +2,18 @@
 
 ## 0.1.8 (unreleased)
 
-**SARIF artifact paths now remain valid URI references.** Paths are normalized from backslashes to forward slashes and each segment is percent-encoded, so spaces and non-ASCII names survive schema validation. The `$schema` field now uses the OASIS SARIF 2.1.0 errata01 schema URL. The schema test invokes the CLI on real filenames with spaces and non-ASCII characters and validates each emitted log. Written by [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan) (fix for [#45](https://github.com/Bubblegunn/ai-slop-linter/issues/45)).
+**SARIF artifact paths now remain valid URI references.** Paths are normalized from backslashes to
+forward slashes and each segment is percent-encoded, so spaces and non-ASCII names survive schema
+validation. The `$schema` field now uses the OASIS SARIF 2.1.0 errata01 schema URL. The schema test
+invokes the CLI on real filenames with spaces and non-ASCII characters and validates each emitted
+log. Written by [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan) (fix for
+[#45](https://github.com/Bubblegunn/ai-slop-linter/issues/45)). Two parts that a run on macOS or
+Linux cannot reach are tested since the merge: a Windows path (`docs\my notes\café.md` becomes
+`docs/my%20notes/caf%C3%A9.md`) and the `$schema` value; removing the backslash step or restoring
+the old URL fails that test. The README's SARIF example no longer runs `sarif-multitool validate`,
+the step [#43](https://github.com/Bubblegunn/ai-slop-linter/issues/43) showed could not fail, and
+the README now credits the SARIF output, the pre-commit hooks and `reference-markup` to their author
+where each is described.
 
 **A rule for the markup chatbots leave behind when their answers are copied.** `reference-markup`
 (`error`) reports internal citation and rendering tokens such as `:contentReference[oaicite:0]{index=0}`,
@@ -35,7 +46,9 @@ rewritten to `(a+)+$` was used to check that. On the first run it found two real
 retried its leading whitespace from every position of a run of spaces, so a file of 100,000
 spaces took 4.5 s. And the excerpt every finding carries, with the line-start check in the dash
 fix, re-read the whole line once per finding, so 100,000 en dashes on one line took 3 to 5 s.
-Both are now linear: the slowest rule on any of the inputs takes 40 ms on the same laptop. The
+Both are now linear: the slowest rule on any of the inputs takes 40 ms on the same laptop. On Node 20 and 22 the
+`dash` rule stayed slow until its list-marker lookbehind was moved out of the pattern, which V8
+before Node 24 re-scanned from every position of a run of spaces; CI on those versions caught it. The
 findings and fixes are unchanged, compared on every Markdown file in the repository and on
 30,000 generated strings.
 
