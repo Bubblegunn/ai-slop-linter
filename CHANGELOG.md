@@ -2,6 +2,8 @@
 
 ## 0.1.8 (unreleased)
 
+**SARIF artifact paths now remain valid URI references.** Paths are normalized from backslashes to forward slashes and each segment is percent-encoded, so spaces and non-ASCII names survive schema validation. The `$schema` field now uses the OASIS SARIF 2.1.0 errata01 schema URL. The schema test invokes the CLI on real filenames with spaces and non-ASCII characters and validates each emitted log. Written by [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan) (fix for [#45](https://github.com/Bubblegunn/ai-slop-linter/issues/45)).
+
 **A rule for the markup chatbots leave behind when their answers are copied.** `reference-markup`
 (`error`) reports internal citation and rendering tokens such as `:contentReference[oaicite:0]{index=0}`,
 `oai_citation`, `turn0search0`, `grok_card` and `[attached_file:1]`, which the guideline's "Reference

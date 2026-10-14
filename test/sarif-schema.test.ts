@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import AjvDraft04 from "ajv-draft-04";
 import addFormats from "ajv-formats";
@@ -20,8 +22,8 @@ const validate = ajv.compile(schema);
 const cli = join(process.cwd(), "dist", "src", "cli.js");
 const sloppy = join(process.cwd(), "test", "fixtures", "sloppy.md");
 
-const emitted = () => {
-  const r = spawnSync("node", [cli, "--format", "sarif", "--warn", sloppy], { encoding: "utf8" });
+const emitted = (target = sloppy) => {
+  const r = spawnSync("node", [cli, "--format", "sarif", "--warn", target], { encoding: "utf8" });
   assert.equal(r.status, 0, r.stderr);
   return JSON.parse(r.stdout);
 };
@@ -32,6 +34,27 @@ test("the SARIF the CLI emits validates against the 2.1.0 schema", () => {
   const log = emitted();
   assert.ok(log.runs[0].results.length > 0, "the fixture must produce results, or the results are never validated");
   assert.deepEqual(errorsOf(log), []);
+});
+
+test("the CLI emits schema-valid SARIF for paths with spaces and non-ASCII characters", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "slop-sarif-"));
+  try {
+    const source = readFileSync(sloppy, "utf8");
+    for (const [name, encodedName] of [
+      ["my notes.md", "my%20notes.md"],
+      ["café.md", "caf%C3%A9.md"],
+    ] as const) {
+      const file = join(dir, name);
+      await writeFile(file, source, "utf8");
+      const log = emitted(file);
+      assert.ok(log.runs[0].results.length > 0, `${name} must produce results, or the results are never validated`);
+      assert.deepEqual(errorsOf(log), [], `${name} should produce schema-valid SARIF`);
+      const uri = log.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri;
+      assert.ok(uri.endsWith(`/${encodedName}`), `expected an encoded URI ending in ${encodedName}, got ${uri}`);
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
 
 // Each of these is the emitted log with one defect. If the validator ever accepts one, the test

@@ -1,6 +1,6 @@
 import type { Finding, LintResult, Rule } from "./index.js";
 
-const SCHEMA = "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json";
+const SCHEMA = "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json";
 const WIKI = "https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing";
 
 const levelFor = (severity: Finding["severity"]): "error" | "warning" | "note" =>
@@ -27,7 +27,7 @@ export function renderSarif(results: LintResult[], ruleSet: readonly Rule[], ver
     message: { text: finding.message },
     locations: [{
       physicalLocation: {
-        artifactLocation: { uri: result.path.replaceAll("\\", "/") },
+        artifactLocation: { uri: result.path.replaceAll("\\", "/").split("/").map((segment) => encodeURIComponent(segment)).join("/") },
         region: { startLine: finding.line, startColumn: finding.column },
       },
     }],
