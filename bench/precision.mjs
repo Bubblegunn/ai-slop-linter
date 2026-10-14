@@ -122,7 +122,7 @@ summarised.
 |---|---:|---|---|
 ${
   groups.human
-    .flatMap(({ name, result }) => result.findings.map((f) => `| \`${name}\` | ${f.line} | \`${f.rule}\` | ${f.message.replace(/\|/g, "\\|")} |`))
+    .flatMap(({ name, result }) => result.findings.map((f) => `| \`${name}\` | ${f.line} | \`${f.rule}\` | ${f.message.replace(/[\\|]/g, "\\$&")} |`))
     .join("\n") || "| | | | none |"
 }
 

@@ -128,7 +128,7 @@ Findings per 1,000 words. Only the rules that fire somewhere have a column here;
 ${silent.length} that fire nowhere in this corpus are listed below the table.
 
 | rule | severity | ${langCol} |
-|---|---|${align.replace(/---:/g, "---:")}|
+|---|---|${align}|
 ${fired.map((r) => `| \`${r.id}\` | ${r.severity} | ${langs.map((l) => rate(l, r.id)).join(" | ")} |`).join("\n")}
 
 Silent on every language in this corpus: ${silent.map((r) => `\`${r.id}\``).join(", ")}.
@@ -190,7 +190,7 @@ ${
         .filter((f) => f.lang === l)
         .flatMap((f) => f.result.findings.map((x) => ({ f, x })))
         .filter(({ x }) => !seen.has(x.rule) && seen.add(x.rule))
-        .map(({ x }) => `| ${NAMES[l]} | \`${x.rule}\` | ${String(x.excerpt ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ").trim() || "—"} |`);
+        .map(({ x }) => `| ${NAMES[l]} | \`${x.rule}\` | ${String(x.excerpt ?? "").replace(/[\\|]/g, "\\$&").replace(/\n/g, " ").trim() || "—"} |`);
     })
     .join("\n") || "| | | none |"
 }
