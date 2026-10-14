@@ -1,5 +1,5 @@
 name: ai-slop-linter
-description: Lint the pull request title, description and changed Markdown files for AI-writing tells, with line-level annotations and one sticky review comment.
+description: Lints the pull request text and changed Markdown for AI-writing tells, with line annotations and one sticky review comment.
 author: Efe Genc
 branding:
   icon: edit-3

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.9 (unreleased)
+
+**The Action can be listed on GitHub Marketplace.** Marketplace refused `action.yml` because the description was 148
+characters, where it accepts fewer than 125. It is now 123. A test now fails on a description of 125 characters or more.
+Nothing a workflow uses changes.
+
 ## 0.1.8 (2026-10-14)
 
 **SARIF artifact paths now remain valid URI references.** Paths are normalized from backslashes to
