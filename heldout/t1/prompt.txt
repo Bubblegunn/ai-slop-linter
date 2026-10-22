@@ -1,0 +1,1 @@
+the Configuration and Performance section of our README reads like a chatbot wrote it. can you rewrite it so it sounds like a normal engineer wrote it? keep every number, version, code snippet and link exactly as is and don't add anything new. when you're done, tell me what you changed.

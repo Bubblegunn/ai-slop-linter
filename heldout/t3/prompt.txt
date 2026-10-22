@@ -1,0 +1,1 @@
+people keep merging docs PRs that sound like ChatGPT wrote them (em dashes everywhere, "it's not just X, it's Y", that kind of thing). set up a check in CI so this never happens again. we already use GitHub Actions.

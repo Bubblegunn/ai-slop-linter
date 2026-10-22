@@ -1,0 +1,15 @@
+[
+ {"name":"chatbot_residue","lang":"en","pattern":"\\b(certainly!|great question|i hope this helps|hope this helps|let me know if|feel free to|as an ai|happy to help|here'?s a (quick )?(breakdown|overview))"},
+ {"name":"inflated_word","lang":"en","pattern":"\\b(pivotal|crucial|testament|vital role|rich tapestry|seamless(ly)?|robust|comprehensive|game-?changing|cutting-edge|revolutionary|delve|underscor\\w+|showcas\\w+|vibrant|groundbreaking|stands as|landscape|unlock\\w*)\\b"},
+ {"name":"not_x_but_y","lang":"en","pattern":"\\b(it'?s|it is|this is|that'?s) not (just|only|merely|simply) [^.\\n;]{1,60}[,;] ?(it'?s|it is|but)\\b|\\bnot (just|only|merely) [^.\\n]{1,60}\\bbut\\b|\\bnot a [a-z]+ but a\\b"},
+ {"name":"em_dash","lang":"en","pattern":"\\u2014"},
+ {"name":"vague_attribution","lang":"en","pattern":"\\b(studies show|research shows|experts (say|agree|believe)|many developers|industry (reports|experts)|it is widely (known|believed)|some say|observers note)\\b"},
+ {"name":"participle_tail","lang":"en","pattern":", (highlighting|ensuring|underscoring|showcasing|reflecting|enabling|demonstrating|fostering|empowering)\\b"},
+ {"name":"stock_phrase","lang":"en","pattern":"\\b(in today'?s|it'?s worth noting|it is worth noting|it is important to note|in conclusion|at the end of the day|whether you'?re|fast-paced world|when it comes to|dive into|deep dive|next level)\\b"},
+ {"name":"emoji_lead","lang":"en","pattern":"^\\s*([-*]\\s*|#+\\s*)?[\\U0001F300-\\U0001FAFF\\u2705\\u2728\\u2B50\\u26A1\\u274C]"},
+ {"name":"rule_of_three","lang":"en","pattern":"\\b(fast|simple|reliable|scalable|powerful|flexible|secure|efficient|intuitive|lightweight|robust|seamless|modern|clean|easy|comprehensive|predictable)\\w*, (fast|simple|reliable|scalable|powerful|flexible|secure|efficient|intuitive|lightweight|robust|seamless|modern|clean|easy|comprehensive|predictable)\\w*,? and (more )?(fast|simple|reliable|scalable|powerful|flexible|secure|efficient|intuitive|lightweight|robust|seamless|modern|clean|easy|comprehensive|predictable)\\w*\\b"},
+ {"name":"fr_chatbot","lang":"fr","pattern":"j.esp\\u00e8re que (cela|\\u00e7a) vous aide"},
+ {"name":"fr_stock","lang":"fr","pattern":"il est important de noter|t\\u00e9moignage de|paysage (num\\u00e9rique|technologique)|sans couture"},
+ {"name":"de_chatbot","lang":"de","pattern":"ich hoffe, (das|dies) hilft"},
+ {"name":"de_stock","lang":"de","pattern":"es ist wichtig zu beachten|nahtlos\\w*|ein zeugnis"}
+]

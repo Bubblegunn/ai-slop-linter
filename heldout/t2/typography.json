@@ -1,0 +1,5 @@
+{
+ "docs/en/guide.md": ["Python 3.9–3.13", "`¿Desea continuar?`"],
+ "docs/fr/guide.md": ["200 ms", "d'aide :", "— Quelle version utilises-tu ?", "— La 3.2.0, répond Camille.", "— Alors tout va bien !", "« Clé d'API invalide »"],
+ "docs/de/guide.md": ["„Ungültiger API-Schlüssel“", "Das Werkzeug – so steht es im Handbuch – ist schnell.", "Seiten 10–12"]
+}

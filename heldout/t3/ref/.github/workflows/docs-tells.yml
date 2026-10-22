@@ -1,0 +1,12 @@
+name: Docs tells
+on:
+  pull_request:
+    paths:
+      - '**.md'
+jobs:
+  docs-tells:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check docs for AI writing tells
+        run: python3 scripts/check_docs.py README.md docs

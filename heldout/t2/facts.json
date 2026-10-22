@@ -1,0 +1,6 @@
+{
+ "docs/en/guide.md": ["`pip install brightlog==3.2.0`", "Python 3.9–3.13", "40 seconds", "`brightlog.toml`", "`endpoint = \"https://logs.brightlog.example/v3/ingest\"`", "`batch_size` default is 500 events", "5 seconds", "one host or 200", "24 hours", "`¿Desea continuar?`", "`locale = \"es\"`", "Brightlog 3.2.0"],
+ "docs/en/release-notes.md": ["3.2.0 (2025-03-14)", "41 bugs", "18% faster than 3.1.4", "`batch_size` now defaults to 500, up from 250", "`--dry-run`", "`endpoint`", "(#212)", "3.1.4 (2025-01-20)", "Marta Keller"],
+ "docs/fr/guide.md": ["Brightlog 3.2.0", "`https://logs.brightlog.example/v3/ingest`", "200 ms", "`pip install brightlog==3.2.0`", "Python 3.9", "Camille", "24 heures", "La 3.2.0"],
+ "docs/de/guide.md": ["Brightlog 3.2.0", "`https://logs.brightlog.example/v3/ingest`", "Python 3.9", "24 Stunden", "500 Ereignisse"]
+}

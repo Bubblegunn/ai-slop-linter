@@ -1,0 +1,1 @@
+can you clean up the docs before we release? there's an english, french and german set in docs/ and parts read like a chatbot wrote them. fix that, but don't change what any of it says. tell me when it's done.

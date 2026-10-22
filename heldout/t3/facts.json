@@ -1,0 +1,6 @@
+{
+ "README.md": ["`npm test`", "Release 1.4.0", "2026-11-03"],
+ "docs/usage.md": ["`npm install -g acme-cli@1.4.0`", "12 seconds", "https://github.com/acme/docs/issues"],
+ ".github/workflows/ci.yml": ["actions/checkout@v4", "actions/setup-node@v4", "npm test", "pull_request"],
+ "docs/fr/guide.md": ["— Ça a marché ?", "— Oui, en 12 secondes, répond Léa.", "« Build terminé »"]
+}
