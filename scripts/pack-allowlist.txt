@@ -34,6 +34,8 @@ dist/src/mcp.d.ts
 dist/src/mcp.js
 dist/src/rewrite-guard.d.ts
 dist/src/rewrite-guard.js
+dist/src/rule-pages.d.ts
+dist/src/rule-pages.js
 dist/src/rules/constructions.d.ts
 dist/src/rules/constructions.js
 dist/src/rules/dashes.d.ts
