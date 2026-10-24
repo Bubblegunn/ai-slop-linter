@@ -53,6 +53,8 @@ interface Spec {
   example: { before: string; after: string };
   ignoreWhen: string;
   hint: string;
+  /** Where the rule comes from. Defaults to the borrowed phrase-list upstream. */
+  source?: string;
 }
 
 function phraseRule(spec: Spec): Rule {
@@ -61,7 +63,7 @@ function phraseRule(spec: Spec): Rule {
     id: spec.id,
     title: spec.title,
     severity: "warning",
-    source: UPSTREAM,
+    source: spec.source ?? UPSTREAM,
     why: spec.why,
     example: spec.example,
     ignoreWhen: spec.ignoreWhen,
@@ -77,7 +79,7 @@ function regexRule(spec: Spec, pattern: RegExp): Rule {
     id: spec.id,
     title: spec.title,
     severity: "warning",
-    source: UPSTREAM,
+    source: spec.source ?? UPSTREAM,
     why: spec.why,
     example: spec.example,
     ignoreWhen: spec.ignoreWhen,
@@ -159,6 +161,19 @@ export const candidateRules: Rule[] = [
       hint: "back it with a number and a baseline",
     },
     /\b(?:significantly|substantially|notably|considerably|dramatically|vastly|greatly|massively|markedly)\s+(?:faster|slower|better|reduced|reduces|reducing|improved|improves|improving|increased|increases|increasing|decreased|decreases|decreasing|optimized|enhanced)\b|\bmuch\s+(?:faster|slower|better|smaller|larger|cleaner)\b|\b(?:huge|massive|major)\s+(?:performance|speed|memory|latency)\s+(?:improvement|boost|gain|reduction|increase|win)\b|\bblazing(?:ly)?\s+fast\b|\bnoticeably\s+(?:faster|slower|better)\b/gi,
+  ),
+  regexRule(
+    {
+      id: "commit-procedural-assurance",
+      title: "Procedural assurance in the message",
+      why: "The phrase promises that something was kept safe instead of saying what was done to it. The assurance adds no fact a reader can check. The evidence is English commit messages, and nothing is claimed for other languages.",
+      source:
+        'Wikipedia, Signs of AI writing: Specific mentions of "preserved" or "retained" information, "avoided" mistakes, and other procedural statements',
+      example: { before: "Rewrote the parser while preserving the original behavior.", after: "Rewrote the parser; its behavior on the suite is unchanged." },
+      ignoreWhen: "You are naming the construction to document it, as a style guide or this linter's own rule table does, or the promise is the point, such as a release note that commits to the public API staying stable.",
+      hint: "say what was done to it instead",
+    },
+    /\b(?:while\s+(?:preserving|retaining|maintaining|ensuring)|without\s+(?:changing|breaking|altering))\b/gi,
   ),
 ];
 

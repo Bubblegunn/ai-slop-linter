@@ -29,6 +29,7 @@ Hits are messages with at least one finding, listed per source in the order djan
 | `commit-trailing-justification` | 70 of 70 | 0 / 0 | 0 / 0 | 1 of 4 | 1 of 70 | adopted |
 | `commit-test-enumeration` | regex | 0 / 1 | 0 / 0 | 0 of 4 | n/a | not adopted: matched a human commit message in the tuning sample, and a regular expression has no phrase to drop |
 | `commit-unquantified` | regex | 0 / 0 | 0 / 0 | 1 of 4 | n/a | adopted |
+| `commit-procedural-assurance` | regex | 0 / 0 | 0 / 0 | 0 of 4 | n/a | adopted |
 
 ## Phrases left out
 

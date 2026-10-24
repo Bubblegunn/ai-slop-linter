@@ -152,18 +152,18 @@ Some readers have learned these tells: the em dash, `not just X but Y`, `I hope 
 
 ## What it looks like
 
-Real output on [`test/fixtures/sloppy.md`](test/fixtures/sloppy.md), a 282-word file
+Real output on [`test/fixtures/sloppy.md`](test/fixtures/sloppy.md), a 290-word file
 written to trip every rule once (first eleven of fifty-two findings):
 
 ```
-test/fixtures/sloppy.md  F (score 192.6, 282 words, 52 findings)
+test/fixtures/sloppy.md  F (score 187.2, 290 words, 52 findings)
      5:1   info    title-case-heading   Title Case heading; sentence case reads as written by a person
      7:1   warning announcing           "Let's dive into": make the point instead of announcing it
      7:26  error   dash                 em dash
      7:32  warning inflated             "is a testament to": say what happened; let the reader judge the importance
      7:37  warning ai-vocabulary        "testament": a word models reach for; use the plain one
      7:72  warning ai-vocabulary        "In today's fast-paced": a word models reach for; use the plain one
-     7:83  info    hyphen-density       7.4 hyphenated compounds per 100 words; drop the hyphen after the noun ("the report is high quality")
+     7:83  info    hyphen-density       7.2 hyphenated compounds per 100 words; drop the hyphen after the noun ("the report is high quality")
      7:115 warning inflated             "stands as a": say what happened; let the reader judge the importance
      7:127 warning inflated             "pivotal moment": say what happened; let the reader judge the importance
      7:127 warning ai-vocabulary        "pivotal": a word models reach for; use the plain one
@@ -251,7 +251,7 @@ To silence a finding you have judged wrong:
 
 ## Commit message rules
 
-`--commit`, `--commit-msg` and `--pr` also run these rules, which only a commit message or a pull request description gets. The phrase lists are adapted from [tbhb/vale-ai-tells](https://github.com/tbhb/vale-ai-tells) by Tony Burns (MIT). `bench/COMMIT-RULES.md` shows how each was measured on commits written before 2021.
+`--commit`, `--commit-msg` and `--pr` also run these rules, which only a commit message or a pull request description gets. The phrase lists are adapted from [tbhb/vale-ai-tells](https://github.com/tbhb/vale-ai-tells) by Tony Burns (MIT); `commit-procedural-assurance` comes from Wikipedia's Signs of AI writing page. `bench/COMMIT-RULES.md` shows how each was measured on commits written before 2021.
 
 | rule | what it flags |
 |---|---|
@@ -260,6 +260,7 @@ To silence a finding you have judged wrong:
 | `commit-marketing` | claims such as "production ready" or "enterprise grade" |
 | `commit-trailing-justification` | a trailing clause that claims a benefit the diff has to show |
 | `commit-unquantified` | a speed claim with no number |
+| `commit-procedural-assurance` | a promise that the change kept something safe, such as "while preserving" or "without breaking", never the bare verbs |
 
 ## If you do not write in English
 

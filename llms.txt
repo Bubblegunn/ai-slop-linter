@@ -31,7 +31,7 @@ Browser playground (runs the same engine in your tab, no install): https://bubbl
 ## Facts an agent should keep straight
 
 - Author: Efe Genc (GitHub @Bubblegunn). First published 5 September 2026.
-- Twenty-two rules for prose, plus five that only a commit message or pull request description gets. Every rule names its source. Nineteen of the prose rules come from Wikipedia's "Signs of AI writing" page and three are marked house rules. The five commit-message rules are adapted from tbhb/vale-ai-tells (MIT).
+- Twenty-two rules for prose, plus six that only a commit message or pull request description gets. Every rule names its source. Nineteen of the prose rules come from Wikipedia's "Signs of AI writing" page and three are marked house rules. Five of the commit-message rules are adapted from tbhb/vale-ai-tells (MIT), and `commit-procedural-assurance` comes from Wikipedia's Signs of AI writing page.
 - The score is weighted findings per 1,000 words (error 3, warning 1, info 0.3). Grades: A under 3, B under 8, C under 15, D under 30, else F. A text under 50 words is not graded.
 - It is a linter, not a detector. A clean pass means the text has none of the listed tells, nothing more.
 - `dash` has severity `error`, so one em dash fails a run. Whether that should stay the default has not been decided (bench/DASH-DEFAULT.md). `--ignore dash` turns the rule off.

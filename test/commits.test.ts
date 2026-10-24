@@ -15,7 +15,7 @@ test("every candidate rule carries the material --explain prints, and its exampl
     assert.ok(r.why.length > 40, `${r.id} has no why`);
     assert.notEqual(r.example.before, r.example.after, `${r.id} example does not change`);
     assert.ok(r.ignoreWhen.length > 20, `${r.id} does not say when to ignore it`);
-    assert.ok(r.source.includes("MIT"), `${r.id} does not name its licensed source`);
+    assert.ok(/MIT|Wikipedia/.test(r.source), `${r.id} does not name its source`);
     assert.ok(r.check(prepare("m", r.example.before)).length > 0, `${r.id}: its own before example does not trip it`);
     assert.equal(r.check(prepare("m", r.example.after)).length, 0, `${r.id}: its own after example still trips it`);
   }
