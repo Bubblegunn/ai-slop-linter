@@ -84,3 +84,12 @@ test("commit-procedural-assurance surfaces warning severity and the inline direc
   const suppressed = "<!-- slop-ignore commit-procedural-assurance -->\nWe rewrote the engine while preserving the original meaning.\n";
   assert.ok(!idsOf(suppressed).has("commit-procedural-assurance"), "directive");
 });
+
+test("commit-procedural-assurance names Wikipedia as its source, not the borrowed phrase-list upstream", () => {
+  // The generic gate cannot check truth: UPSTREAM contains MIT and satisfies it. This rule's
+  // source is pinned so --explain prints the authority the rule was actually built from.
+  assert.equal(
+    rule("commit-procedural-assurance")?.source,
+    'Wikipedia, Signs of AI writing: Specific mentions of "preserved" or "retained" information, "avoided" mistakes, and other procedural statements',
+  );
+});
