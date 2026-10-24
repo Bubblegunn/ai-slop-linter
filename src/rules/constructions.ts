@@ -105,31 +105,6 @@ export const ingTail: Rule = {
   },
 };
 
-/** Phrases that promise an edit was careful instead of saying what was done. */
-export const proceduralAssurance: Rule = {
-  id: "procedural-assurance",
-  title: "Procedural assurance",
-  severity: "info",
-  source:
-    "Wikipedia, Signs of AI writing: Specific mentions of \"preserved\" or \"retained\" information, \"avoided\" mistakes, and other procedural statements",
-  why:
-    "The phrase promises that something was kept safe instead of saying what was done to it. The assurance adds no fact a reader can check, and it is what an edit summary sounds like when the edit was made to satisfy an instruction to preserve something.",
-  example: {
-    before: "Rewrote the parser while preserving the original behavior.",
-    after: "Rewrote the parser; its behavior on the suite is unchanged.",
-  },
-  ignoreWhen:
-    "You are naming the construction to document it, as a style guide or this linter's own rule table does, or the promise is the point, such as a release note that commits to the public API staying stable.",
-  check(doc) {
-    return scan(
-      doc,
-      proceduralAssurance,
-      /\b(?:while\s+(?:preserving|retaining|maintaining|ensuring)|without\s+(?:changing|breaking|altering))\b/gi,
-      (m) => `"${m[0]}": say what was done to it instead`,
-    );
-  },
-};
-
 /** Words that claim importance or legacy for ordinary details. */
 export const inflated: Rule = {
   id: "inflated",

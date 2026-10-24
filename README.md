@@ -153,10 +153,10 @@ Some readers have learned these tells: the em dash, `not just X but Y`, `I hope 
 ## What it looks like
 
 Real output on [`test/fixtures/sloppy.md`](test/fixtures/sloppy.md), a 290-word file
-written to trip every rule once (first eleven of fifty-three findings):
+written to trip every rule once (first eleven of fifty-two findings):
 
 ```
-test/fixtures/sloppy.md  F (score 188.3, 290 words, 53 findings)
+test/fixtures/sloppy.md  F (score 187.2, 290 words, 52 findings)
      5:1   info    title-case-heading   Title Case heading; sentence case reads as written by a person
      7:1   warning announcing           "Let's dive into": make the point instead of announcing it
      7:26  error   dash                 em dash
@@ -180,7 +180,7 @@ column means: [docs/SCORING.md](docs/SCORING.md).
 
 ## The rules
 
-Twenty-three rules. Most come from the Wikipedia page
+Twenty-two rules. Most come from the Wikipedia page
 [Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing),
 written by editors who review thousands of machine-written edits; the three marked "house"
 are ours. Run `npx ai-slop-linter --rules` for the same list from the binary, and
@@ -221,7 +221,6 @@ actually trips the rule it illustrates.
 | `triad` | warning | three single words in a row sharing a suffix (`careful, thoughtful, and mindful`) | |
 | `reveal` | warning (house) | `The real question is`, `At its core`, `What really matters` | |
 | `ing-tail` | warning | a comma then `, highlighting`, `, showcasing`, `, underscoring` | |
-| `procedural-assurance` | info | `while preserving`, `while ensuring`, `without breaking` and their siblings (a promise that nothing was harmed, never the bare verbs) | |
 | `inflated` | warning | `is a testament to`, `pivotal`, `stands as a`, `marks a turning point` | |
 | `ai-vocabulary` | warning | `delve`, `tapestry`, `robust`, `seamless`, `vibrant`, `leverage`, `elevate`, `foster`, `crucial`, abstract `landscape` and friends | |
 | `sales` | warning | `world-class`, `best-in-class`, `state-of-the-art`, `cutting-edge`, `nestled in the heart of` | |
@@ -252,7 +251,7 @@ To silence a finding you have judged wrong:
 
 ## Commit message rules
 
-`--commit`, `--commit-msg` and `--pr` also run these rules, which only a commit message or a pull request description gets. The phrase lists are adapted from [tbhb/vale-ai-tells](https://github.com/tbhb/vale-ai-tells) by Tony Burns (MIT). `bench/COMMIT-RULES.md` shows how each was measured on commits written before 2021.
+`--commit`, `--commit-msg` and `--pr` also run these rules, which only a commit message or a pull request description gets. The phrase lists are adapted from [tbhb/vale-ai-tells](https://github.com/tbhb/vale-ai-tells) by Tony Burns (MIT); `commit-procedural-assurance` comes from Wikipedia's Signs of AI writing page. `bench/COMMIT-RULES.md` shows how each was measured on commits written before 2021.
 
 | rule | what it flags |
 |---|---|
@@ -261,6 +260,7 @@ To silence a finding you have judged wrong:
 | `commit-marketing` | claims such as "production ready" or "enterprise grade" |
 | `commit-trailing-justification` | a trailing clause that claims a benefit the diff has to show |
 | `commit-unquantified` | a speed claim with no number |
+| `commit-procedural-assurance` | a promise that the change kept something safe, such as "while preserving" or "without breaking", never the bare verbs |
 
 ## If you do not write in English
 
@@ -532,7 +532,7 @@ The tool is run on the READMEs of the author's five repositories. The dated resu
   says the tells are absent; it says nothing about who typed.
 - Meaning. It cannot tell a hollow paragraph from a good one when the hollow one
   avoids every listed phrase. Text that passes can still be empty.
-- Style outside the list. Twenty-three rules cover the patterns editors flag most; a
+- Style outside the list. Twenty-two rules cover the patterns editors flag most; a
   writer with a different tell passes. Add a rule when you find one.
 - Other languages. The vocabulary rules are English, and the structural ones work anywhere. Outside English the `dash` and `title-case-heading` rules stand down. There is one provisional French rule and no Spanish or German rule, because no candidate passed the shipping limit, so the tool does not claim to detect model text in those languages. Hindi has since been tested against a corpus rather than assumed, and produced no rule worth shipping: see [the Hindi negative result](docs/hindi-rules-negative-result.md). See [CONTRIBUTING.md](CONTRIBUTING.md) and issue #1.
 

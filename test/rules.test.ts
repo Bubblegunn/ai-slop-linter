@@ -460,35 +460,6 @@ test("curly quotes are judged against the straight form of their own family", ()
   assert.equal(lintText("README.md", apostrophes).findings.filter((f) => f.rule === "curly-quotes").length, 1);
 });
 
-test("procedural-assurance catches both frames across their verbs and never the bare verbs", () => {
-  for (const v of ["preserving", "retaining", "maintaining", "ensuring"]) {
-    assert.ok(idsIn(`Rewrote the parser while ${v} the original behavior.`).has("procedural-assurance"), v);
-  }
-  for (const v of ["changing", "breaking", "altering"]) {
-    assert.ok(idsIn(`Shipped the upgrade without ${v} the public API.`).has("procedural-assurance"), v);
-  }
-  for (const text of [
-    "The migration preserves the original meaning.",
-    "Preserving the cache was the point, and retaining it sped up the tests.",
-    "We ensured the flag stayed set, altered the order, and broke nothing by hand.",
-    "The daemon stays up while shipping metrics.",
-    "The upgrade lands without comment.",
-  ]) {
-    assert.ok(!idsIn(text).has("procedural-assurance"), text);
-  }
-});
-
-test("procedural-assurance reports info severity, carries no fix, is masked in code and suppressed by the directive", () => {
-  const found = lintText("p.md", "We rewrote the engine while preserving the original meaning.").findings.filter((f) => f.rule === "procedural-assurance");
-  assert.equal(found.length, 1);
-  assert.equal(found[0]!.severity, "info");
-  assert.equal(found[0]!.fix, undefined);
-  // Inside inline code the phrase is a quotation, not a tell.
-  assert.ok(!idsIn("The rule table quotes `while preserving` as the tell it names.").has("procedural-assurance"));
-  const suppressed = "<!-- slop-ignore procedural-assurance -->\nRewrote the parser while preserving the original behavior.\n";
-  assert.ok(!idsIn(suppressed).has("procedural-assurance"));
-});
-
 test("hyphen-density counts compounds in any alphabet", () => {
   // The pattern was [a-z]+-[a-z]+, so "peut-être" and every other non-ASCII compound was
   // invisible and the rule quietly did nothing outside English.

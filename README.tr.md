@@ -120,7 +120,7 @@ Etkileşimli bir terminalde, temiz bir çalıştırmadan sonra makine başına b
 
 ## Kurallar
 
-Yirmi üç kural. Çoğu, binlerce makine yazımı düzenlemeyi inceleyen editörlerin yazdığı
+Yirmi iki kural. Çoğu, binlerce makine yazımı düzenlemeyi inceleyen editörlerin yazdığı
 Wikipedia sayfasından geliyor: [Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing).
 "house" işaretli üçü bizim. Tam liste ve kaynaklar için `npx ai-slop-linter --rules`
 veya İngilizce README'deki tablo.
