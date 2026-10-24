@@ -26,6 +26,9 @@ export interface Finding {
   severity: Severity;
   line: number;
   column: number;
+  /** 1-based line and column of the first character after the finding, end exclusive. */
+  endLine: number;
+  endColumn: number;
   excerpt: string;
   message: string;
   fix?: Fix;
@@ -318,7 +321,8 @@ export function scan(
   for (const m of doc.masked.matchAll(re)) {
     const start = m.index!;
     const { line, column } = position(doc, start);
-    const finding: Finding = { rule: rule.id, severity: rule.severity, line, column, excerpt: excerptAt(doc, start, m[0].length), message: message(m) };
+    const end = position(doc, start + m[0].length);
+    const finding: Finding = { rule: rule.id, severity: rule.severity, line, column, endLine: end.line, endColumn: end.column, excerpt: excerptAt(doc, start, m[0].length), message: message(m) };
     if (fix) {
       const replacement = fix(m);
       if (replacement !== null) finding.fix = { start, end: start + m[0].length, replacement };

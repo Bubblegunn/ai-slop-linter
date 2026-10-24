@@ -65,7 +65,7 @@ test("a Windows path becomes slash-separated encoded segments, and $schema is th
   const { renderSarif } = await import(pathToFileURL(join(process.cwd(), "dist", "src", "sarif.js")).href);
   const { rules } = await import(pathToFileURL(join(process.cwd(), "dist", "src", "index.js")).href);
   const rule = rules[0];
-  const finding = { rule: rule.id, severity: rule.severity, line: 1, column: 1, excerpt: "x", message: "m" };
+  const finding = { rule: rule.id, severity: rule.severity, line: 1, column: 1, endLine: 1, endColumn: 2, excerpt: "x", message: "m" };
   const result = { path: "docs\\my notes\\café.md", words: 1, findings: [finding], stoodDown: [], score: null, grade: null };
   const log = JSON.parse(renderSarif([result], rules, "0.0.0"));
   assert.equal(log.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri, "docs/my%20notes/caf%C3%A9.md");

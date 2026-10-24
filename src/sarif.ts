@@ -28,7 +28,7 @@ export function renderSarif(results: LintResult[], ruleSet: readonly Rule[], ver
     locations: [{
       physicalLocation: {
         artifactLocation: { uri: result.path.replaceAll("\\", "/").split("/").map((segment) => encodeURIComponent(segment)).join("/") },
-        region: { startLine: finding.line, startColumn: finding.column },
+        region: { startLine: finding.line, startColumn: finding.column, endLine: finding.endLine, endColumn: finding.endColumn },
       },
     }],
   })));

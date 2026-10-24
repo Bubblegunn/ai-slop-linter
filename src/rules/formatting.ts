@@ -51,7 +51,8 @@ export const titleCase: Rule = {
       const caps = main.filter((w) => /^[A-Z]/.test(w)).length;
       if (caps / main.length >= 0.75) {
         const { line, column } = position(doc, m.index!);
-        out.push({ rule: titleCase.id, severity: titleCase.severity, line, column, excerpt: m[0].trim(), message: "Title Case heading; sentence case reads as written by a person" });
+        const end = position(doc, m.index! + m[0].length);
+        out.push({ rule: titleCase.id, severity: titleCase.severity, line, column, endLine: end.line, endColumn: end.column, excerpt: m[0].trim(), message: "Title Case heading; sentence case reads as written by a person" });
       }
     }
     return out;
@@ -144,7 +145,10 @@ export const hyphenDensity: Rule = {
     if (per100 <= 3) return [];
     const first = matches[0]!;
     const { line, column } = position(doc, first.index!);
-    return [{ rule: hyphenDensity.id, severity: hyphenDensity.severity, line, column, excerpt: `${matches.length} hyphenated pairs in ${doc.words} words`, message: `${per100.toFixed(1)} hyphenated compounds per 100 words; drop the hyphen after the noun ("the report is high quality")` }];
+    // The rule has no phrase to cover: it judges the whole document, so the range runs from
+    // the first compound to the end of the text.
+    const end = position(doc, doc.text.length);
+    return [{ rule: hyphenDensity.id, severity: hyphenDensity.severity, line, column, endLine: end.line, endColumn: end.column, excerpt: `${matches.length} hyphenated pairs in ${doc.words} words`, message: `${per100.toFixed(1)} hyphenated compounds per 100 words; drop the hyphen after the noun ("the report is high quality")` }];
   },
 };
 

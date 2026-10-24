@@ -88,6 +88,8 @@ const finding = (f: Finding) => ({
   severity: f.severity,
   line: f.line,
   column: f.column,
+  endLine: f.endLine,
+  endColumn: f.endColumn,
   excerpt: f.excerpt,
   message: f.message,
   fixable: !!f.fix,

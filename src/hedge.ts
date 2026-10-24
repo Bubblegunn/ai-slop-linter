@@ -221,7 +221,7 @@ export function scanHedge(doc: Doc, tag: string): HedgeHit[] {
   const hits: HedgeHit[] = [];
   for (const { at, phrase } of found) {
     const { line, column } = position(doc, at);
-    if (suppressed(doc, { rule: "hedge", severity: "error", line, column, excerpt: "", message: "" })) continue;
+    if (suppressed(doc, { rule: "hedge", severity: "error", line, column, endLine: line, endColumn: column, excerpt: "", message: "" })) continue;
     hits.push({ line, column, phrase });
   }
   return hits;

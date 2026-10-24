@@ -34,8 +34,8 @@ test("stdin, json and github formats", () => {
   assert.deepEqual(parsed[0].findings.map((f: { rule: string }) => f.rule).sort(), ["announcing", "dash"]);
   assert.equal(parsed[0].findings.find((f: { rule: string }) => f.rule === "dash").fixable, true);
   const g = run(["-", "--format", "github"], { input: "Let's dive in — now.\n" });
-  assert.match(g.out, /::error file=stdin,line=1,col=\d+,title=dash::/);
-  assert.match(g.out, /::warning file=stdin,line=1,col=1,title=announcing::/);
+  assert.match(g.out, /::error file=stdin,line=1,col=\d+,endColumn=\d+,title=dash::/);
+  assert.match(g.out, /::warning file=stdin,line=1,col=1,endColumn=\d+,title=announcing::/);
   assert.match(g.out, /::error file=stdin,title=ai-slop-linter::not graded, 4 words, 2 findings; 1 error-severity tell/);
   // Long enough to be graded: under the fifty-word floor there is no score to exceed.
   const filler = "word ".repeat(60);

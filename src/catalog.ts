@@ -68,7 +68,7 @@ export function scanCatalog(doc: Doc, tag: string, dir?: string): CatalogHit[] {
     for (const m of text.matchAll(re)) {
       if (m[0] === "") continue;
       const { line, column } = position(doc, m.index!);
-      if (suppressed(doc, { rule: "catalog", severity: "error", line, column, excerpt: "", message: "" })) continue;
+      if (suppressed(doc, { rule: "catalog", severity: "error", line, column, endLine: line, endColumn: column, excerpt: "", message: "" })) continue;
       hits.push({ line, column, phrase: m[0], at: m.index! });
     }
   }

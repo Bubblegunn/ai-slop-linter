@@ -437,7 +437,10 @@ export function renderGithub(results: LintResult[], maxScore: number): string {
   for (const r of results) {
     for (const f of r.findings) {
       const level = f.severity === "error" ? "error" : f.severity === "warning" ? "warning" : "notice";
-      out.push(`::${level} file=${r.path},line=${f.line},col=${f.column},title=${f.rule}::${f.message}`);
+      // endColumn only while the range stays on the finding's line, the one case an
+      // annotation can underline.
+      const end = f.endLine === f.line ? `,endColumn=${f.endColumn}` : "";
+      out.push(`::${level} file=${r.path},line=${f.line},col=${f.column}${end},title=${f.rule}::${f.message}`);
     }
     const summary = r.score === null ? `not graded, ${r.words} words, ${r.findings.length} findings` : `${r.grade}, score ${r.score}, ${r.findings.length} findings`;
     if (r.errors > 0) out.push(`::error file=${r.path},title=ai-slop-linter::${summary}; ${r.errors} error-severity tell${r.errors === 1 ? "" : "s"}`);
@@ -702,7 +705,7 @@ async function main() {
   if (exitCode !== 0) process.exit(1);
 }
 
-const withoutFix = (f: Finding) => ({ rule: f.rule, severity: f.severity, line: f.line, column: f.column, excerpt: f.excerpt, message: f.message, fixable: !!f.fix });
+const withoutFix = (f: Finding) => ({ rule: f.rule, severity: f.severity, line: f.line, column: f.column, endLine: f.endLine, endColumn: f.endColumn, excerpt: f.excerpt, message: f.message, fixable: !!f.fix });
 
 const entry = process.argv[1] ? pathToFileURL(process.argv[1]).href : "";
 if (entry === import.meta.url || /\/(?:slop|ai-slop-linter)$/.test(entry)) {
