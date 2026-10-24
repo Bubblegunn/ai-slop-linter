@@ -2,7 +2,7 @@
 
 [Back to the README](../README.md)
 
-Use `--format sarif` to emit SARIF 2.1.0 for GitHub code scanning. SARIF output was written by [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan) ([#41](https://github.com/Bubblegunn/ai-slop-linter/pull/41)), who also made file paths with spaces and non-ASCII names valid URIs ([#63](https://github.com/Bubblegunn/ai-slop-linter/pull/63)). Every rule is included in the run metadata with its description and source citation. Severities map directly: `error` to `error`, `warning` to `warning`, and `info` to `note`.
+Use `--format sarif` to emit SARIF 2.1.0 for GitHub code scanning. SARIF output was written by [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan) ([#41](https://github.com/Bubblegunn/ai-slop-linter/pull/41)), who also made file paths with spaces and non-ASCII names valid URIs ([#63](https://github.com/Bubblegunn/ai-slop-linter/pull/63)). Every rule is included in the run metadata with its description and source citation, a `helpUri` linking its own page on the site (`https://bubblegunn.github.io/ai-slop-linter/rules/<id>/`) and `help` text and markdown carrying the same material `--explain` prints. Severities map directly: `error` to `error`, `warning` to `warning`, and `info` to `note`.
 
 The run declares `utf16CodeUnits` for SARIF columns, matching the tool's documented 1-based UTF-16 column convention. Do not convert these columns to Unicode scalar values.
 
