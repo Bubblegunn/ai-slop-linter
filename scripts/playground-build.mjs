@@ -100,6 +100,12 @@ if (!existsSync(join(root, "dist/src/index.js"))) {
   console.error("playground-build: dist/src/index.js is missing. Run `npm run build` first (or use `npm run playground`).");
   process.exit(1);
 }
+// The rule metadata and the page renderer come from the built source, so the pages and the
+// SARIF help draw on one definition (src/rule-pages.ts). Imported here, after the guard, so a
+// missing dist still gets the friendly message above instead of a module-not-found error.
+const { SITE_ROOT, rulePageUrl, renderRulePage } = await import("../dist/src/rule-pages.js");
+const { allRules } = await import("../dist/src/index.js");
+const { commitRules } = await import("../dist/src/commits.js");
 
 rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, "engine/rules"), { recursive: true });
@@ -166,15 +172,21 @@ writeFileSync(
 
 for (const f of readdirSync(join(root, "playground"))) cpSync(join(root, "playground", f), join(out, f));
 
-// Files for search engines and language models. The site is one page, so the sitemap lists one
-// URL. A project site cannot serve /robots.txt (crawlers read it at the host root), so none is
-// written. llms.txt and llms-full.txt are the repository's own files; their relative links would
-// 404 on Pages, so each is pointed at the file on GitHub.
-const SITE = "https://bubblegunn.github.io/ai-slop-linter/";
+// Files for search engines and language models. The sitemap lists the playground page and every
+// generated rule page. A project site cannot serve /robots.txt (crawlers read it at the host
+// root), so none is written. llms.txt and llms-full.txt are the repository's own files; their
+// relative links would 404 on Pages, so each is pointed at the file on GitHub.
+const SITE = SITE_ROOT;
 const BLOB = "https://github.com/Bubblegunn/ai-slop-linter/blob/main/";
+const RULE_SET = [...allRules(), ...commitRules];
+for (const rule of RULE_SET) {
+  const dir = join(out, "rules", rule.id);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "index.html"), renderRulePage(rule));
+}
 writeFileSync(
   join(out, "sitemap.xml"),
-  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${SITE}</loc></url>\n</urlset>\n`,
+  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${SITE}</loc></url>\n${RULE_SET.map((rule) => `  <url><loc>${rulePageUrl(rule.id)}</loc></url>\n`).join("")}</urlset>\n`,
 );
 for (const f of ["llms.txt", "llms-full.txt"]) {
   if (!existsSync(join(root, f))) continue;

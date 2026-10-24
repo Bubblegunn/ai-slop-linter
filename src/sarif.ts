@@ -1,13 +1,10 @@
 import type { Finding, LintResult, Rule } from "./index.js";
+import { rulePageUrl, ruleHelpText, ruleHelpMarkdown } from "./rule-pages.js";
 
 const SCHEMA = "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json";
-const WIKI = "https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing";
 
 const levelFor = (severity: Finding["severity"]): "error" | "warning" | "note" =>
   severity === "error" ? "error" : severity === "warning" ? "warning" : "note";
-
-const helpUri = (source: string): string | undefined =>
-  source.startsWith("Wikipedia,") ? WIKI : undefined;
 
 export function renderSarif(results: LintResult[], ruleSet: readonly Rule[], version: string): string {
   const rules = ruleSet.map((rule) => ({
@@ -17,7 +14,8 @@ export function renderSarif(results: LintResult[], ruleSet: readonly Rule[], ver
     fullDescription: { text: rule.why },
     defaultConfiguration: { level: levelFor(rule.severity) },
     properties: { source: rule.source },
-    ...(helpUri(rule.source) ? { helpUri: helpUri(rule.source) } : {}),
+    helpUri: rulePageUrl(rule.id),
+    help: { text: ruleHelpText(rule), markdown: ruleHelpMarkdown(rule) },
   }));
   const indexes = new Map(ruleSet.map((rule, index) => [rule.id, index]));
   const sarifResults = results.flatMap((result) => result.findings.map((finding) => ({
