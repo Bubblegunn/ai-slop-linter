@@ -1,7 +1,7 @@
 import { prepare, suppressed } from "./doc.js";
 import type { Doc, Finding, Fix, Rule, Severity } from "./doc.js";
 import { dashes } from "./rules/dashes.js";
-import { notXButY, triad, reveal, ingTail, inflated } from "./rules/constructions.js";
+import { notXButY, triad, reveal, ingTail, proceduralAssurance, inflated } from "./rules/constructions.js";
 import { aiVocabulary, sales, filler } from "./rules/vocabulary.js";
 import { chatbot, announcing, closer, challenges, vagueSource, cutoff } from "./rules/residue.js";
 import { referenceMarkup } from "./rules/reference-markup.js";
@@ -23,6 +23,7 @@ export const rules: Rule[] = [
   triad,
   reveal,
   ingTail,
+  proceduralAssurance,
   inflated,
   aiVocabulary,
   sales,

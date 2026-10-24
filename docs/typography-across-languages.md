@@ -80,11 +80,11 @@ none. Both were checked directly against the built linter rather than inferred f
 
 The division is visible in the source, and it is cleaner than the table alone suggests.
 
-Fifteen rules are built from English words and phrases: `not-x-but-y`, `triad`, `reveal`,
-`ing-tail`, `inflated`, `ai-vocabulary`, `sales`, `filler`, `chatbot`, `announcing`, `closer`,
+Sixteen rules are built from English words and phrases: `not-x-but-y`, `triad`, `reveal`,
+`ing-tail`, `inflated`, `procedural-assurance`, `ai-vocabulary`, `sales`, `filler`, `chatbot`, `announcing`, `closer`,
 `challenges-section`, `cutoff-disclaimer`, `vague-source` and `title-case-heading`. Outside
 English these are not unfair. They are inert. A French README written entirely by a model passes
-all fifteen, because `in order to` is not a French phrase and title case is not a French
+all sixteen, because `in order to` is not a French phrase and title case is not a French
 convention. That is a real limit on what this tool can claim, and it is the opposite of the
 problem `dash` has: the word rules are blind rather than biased.
 
