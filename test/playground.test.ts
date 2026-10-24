@@ -117,7 +117,7 @@ test("the served engine and the CLI report the same findings at the same offsets
       const mine = engine.lintText(result.path, text);
       // Same shape the CLI prints: the fix object becomes a `fixable` flag.
       const shaped = mine.findings.map((f: Record<string, unknown> & { fix?: unknown }) => ({
-        rule: f.rule, severity: f.severity, line: f.line, column: f.column, excerpt: f.excerpt, message: f.message, fixable: !!f.fix,
+        rule: f.rule, severity: f.severity, line: f.line, column: f.column, endLine: f.endLine, endColumn: f.endColumn, excerpt: f.excerpt, message: f.message, fixable: !!f.fix,
       }));
       assert.deepEqual(shaped, result.findings, `${result.path}: the page's engine and the CLI disagree`);
       assert.equal(mine.words, result.words, `${result.path}: word count`);
@@ -126,7 +126,7 @@ test("the served engine and the CLI report the same findings at the same offsets
       assert.deepEqual(mine.stoodDown, result.stoodDown, `${result.path}: rules that stood down`);
       // And the copy agrees with the module this test imported directly, so the copy is a copy.
       assert.deepEqual(shaped, lintText(result.path, text).findings.map((f) => ({
-        rule: f.rule, severity: f.severity, line: f.line, column: f.column, excerpt: f.excerpt, message: f.message, fixable: !!f.fix,
+        rule: f.rule, severity: f.severity, line: f.line, column: f.column, endLine: f.endLine, endColumn: f.endColumn, excerpt: f.excerpt, message: f.message, fixable: !!f.fix,
       })));
     }
   } finally {

@@ -71,14 +71,17 @@ test("a match at end of line ends one past the last character", () => {
 
 test("the title case finding covers the whole heading line", () => {
   const heading = "## Getting Started With The Parser";
-  const result = lintText("doc.md", `${heading}\n`);
+  // Trailing spaces stay in the match but not in the excerpt, which the rule trims, so the
+  // excerpt is shorter than the match and a mutant that stops trimming dies here.
+  const result = lintText("doc.md", `${heading}   \n`);
   const tc = result.findings.find((f) => f.rule === "title-case-heading");
   assert.ok(tc, "the title case rule must fire");
   const { endLine, endColumn } = endOf(tc);
   assert.equal(tc.line, 1);
   assert.equal(tc.column, 1);
   assert.equal(endLine, 1);
-  assert.equal(endColumn, heading.length + 1, "one past the last character of the heading");
+  assert.equal(endColumn, heading.length + 4, "one past the trailing spaces the match keeps");
+  assert.equal(tc.excerpt, heading);
 });
 
 test("the hyphen density finding spans the whole document it grades", () => {
