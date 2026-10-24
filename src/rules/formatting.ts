@@ -16,7 +16,7 @@ export const boldLabel: Rule = {
   ignoreWhen:
     "The list is a glossary or an options table, where the label is the term being defined.",
   check(doc) {
-    return scan(doc, boldLabel, /^[ \t]*(?:[-*+]|\d+\.)\s+\*\*[^*\n]{1,60}?:?\*\*:?\s/gm, () => "bold label with a colon; write the item as a sentence");
+    return scan(doc, boldLabel, /^[ \t]*(?:[-*+]|\d+\.)\s+\*\*(?:[^*\n]{1,60}:\*\*|[^*\n]{1,60}\*\*:)[ \t]+/gm, () => "bold label with a colon; write the item as a sentence");
   },
 };
 

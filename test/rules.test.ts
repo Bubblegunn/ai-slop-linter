@@ -21,6 +21,18 @@ test("the clean fixture has no error-severity findings and grades A", () => {
   assert.equal(r.grade, "A", `score ${r.score}: ${JSON.stringify(r.findings)}`);
 });
 
+test("bold-label: colon-led mini-headings still fire, CV role lists do not", () => {
+  const roles = fixture("cv-role-list.md");
+  const roleFindings = lintText("profile.md", roles).findings.filter((f) => f.rule === "bold-label");
+  assert.deepEqual(roleFindings, []);
+
+  const labels = [
+    "- **Fast:** Leverages a cutting-edge execution engine.",
+    "- **Region affinity**: Requests are served from the nearest region.",
+  ].join("\n");
+  assert.equal(lintText("machine.md", labels).findings.filter((f) => f.rule === "bold-label").length, 2);
+});
+
 test("reference markup: every alternative is covered individually and masked tokens stay ignored", () => {
   const cases = [
     "The answer left :contentReference[oaicite:0]{index=0} in the prose.",

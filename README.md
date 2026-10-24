@@ -148,6 +148,19 @@ Some readers have learned these tells: the em dash, `not just X but Y`, `I hope 
 | VS Code extension | a `.vsix` built from `vscode/`, see [its README](vscode/README.md) | not yet on the Marketplace <!-- release-status --> |
 | Browser | [the playground](https://bubblegunn.github.io/ai-slop-linter/) | live |
 
+### A structural use of bold that is not a mini-heading
+
+A short CV-style role list can bold the role or linked company because that is the entity each row describes:
+
+```markdown
+- **Founder, [LILA](https://hellolila.app)** (Feb 2026 to present): a proactive personal AI product.
+- **Founding engineer, [Cendra](https://cendra.ai)** (Aug 2025 to Jul 2026): primary author of the frontend.
+```
+
+Those bold spans are structural, not mini-headings. There is no dependable way to infer that distinction from a link, a proper noun, or list length alone. `bold-label` now requires a colon immediately after the bold span (inside or outside the closing `**`), which preserves the colon-led mini-heading pattern in the machine corpus while leaving the role-list shape alone.
+
+If legitimate formatting still matches the rule, put `<!-- slop-ignore-next-line bold-label -->` on the line immediately before each affected item, or `<!-- slop-ignore bold-label -->` before the section to ignore it from that point onward.
+
 ## What it looks like
 
 Real output on [`test/fixtures/sloppy.md`](test/fixtures/sloppy.md), a 282-word file
