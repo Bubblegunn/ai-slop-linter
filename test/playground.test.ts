@@ -46,7 +46,12 @@ test("the assembled page carries the engine and nothing that needs Node", () => 
   const site = assemble();
   try {
     const files = walk(site);
-    assert.deepEqual(files, [
+    // The generated rule pages (issue #59) are pinned, set and content, in rule-pages.test.ts;
+    // this list pins everything else the build emits, so the pages are lifted out by prefix.
+    const pages = files.filter((f) => f.startsWith("rules/"));
+    assert.deepEqual(
+      files.filter((f) => !f.startsWith("rules/")),
+      [
       "config-export.js",
       "engine/compare.js",
       "engine/doc.js",
@@ -69,6 +74,7 @@ test("the assembled page carries the engine and nothing that needs Node", () => 
       "samples.js",
       "sitemap.xml",
     ]);
+    for (const page of pages) assert.match(page, /^rules\/.+\/index\.html$/, `${page} is not a rule page path`);
     // The three modules that would break the page: cli.js pulls node:child_process, node:fs,
     // node:path and node:url; glob.js and history.js pull node:fs and node:child_process.
     for (const banned of ["engine/cli.js", "engine/glob.js", "engine/history.js"]) {
@@ -168,13 +174,15 @@ test("samples are generated from files in this repository and are labelled synth
 test("no source line in the page can make a request or turn text into markup", () => {
   // Issue #20's privacy contract, as far as reading the source can establish it: no account, no
   // analytics, no automatic storage, and the text never leaves the device. This is static
-  // analysis of the two files that are authored by hand. A browser's network panel is the other
+  // analysis of the three files that are authored by hand. A browser's network panel is the other
   // half of the check and is NOT RUN here.
   const html = readFileSync(join(ROOT, "playground", "index.html"), "utf8");
   const js = readFileSync(join(ROOT, "playground", "playground.js"), "utf8");
   const cfg = readFileSync(join(ROOT, "playground", "config-export.js"), "utf8");
 
-  for (const [name, body] of [["index.html", html], ["playground.js", js], ["config-export.js", cfg]] as const) {
+  // The contract as patterns, so the same arrays run over the three hand-authored files and
+  // over every generated rule page (issue #59): the iteration is extended, the patterns are not.
+  const contract = (name: string, body: string) => {
     for (const pattern of [/\bfetch\s*\(/, /XMLHttpRequest/, /\bWebSocket\b/, /sendBeacon/, /EventSource/, /new\s+Image\s*\(/, /navigator\.geolocation/, /gtag|googletagmanager|google-analytics|plausible|posthog|sentry/i]) {
       assert.ok(!pattern.test(body), `${name} matches ${pattern}, which could carry text off the device`);
     }
@@ -192,19 +200,35 @@ test("no source line in the page can make a request or turn text into markup", (
     for (const pattern of [/innerHTML/, /outerHTML/, /insertAdjacentHTML/, /document\.write/, /\beval\s*\(/, /new\s+Function\s*\(/]) {
       assert.ok(!pattern.test(body), `${name} matches ${pattern}, which would make user text executable`);
     }
+    // No third-party resource: no stylesheet link, no remote font, no remote script. The one
+    // external reference allowed is a link a person clicks, which fetches nothing until then.
+    assert.ok(!/<link\b/i.test(body), `${name} links an external resource`);
+    assert.ok(!/@import/i.test(body), `${name} imports a remote stylesheet`);
+    assert.ok(!/url\(\s*['"]?https?:/i.test(body), `${name} loads a remote asset from CSS`);
+    for (const m of body.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)) {
+      assert.ok(m[1]!.startsWith("./"), `${name} loads the script ${m[1]}, which is not local`);
+    }
+    for (const m of body.matchAll(/\bhref\s*=\s*["'](https?:[^"']+)["']/gi)) {
+      assert.match(m[1]!, /^https:\/\/github\.com\/Bubblegunn\/ai-slop-linter/, `${name} points at ${m[1]}`);
+    }
+  };
+
+  for (const [name, body] of [["index.html", html], ["playground.js", js], ["config-export.js", cfg]] as const) {
+    contract(name, body);
   }
 
-  // No third-party resource: no stylesheet link, no remote font, no remote script. The one
-  // external reference allowed is a link a person clicks, which fetches nothing until then.
-  assert.ok(!/<link\b/i.test(html), "index.html links an external resource");
-  assert.ok(!/@import/i.test(html), "index.html imports a remote stylesheet");
-  assert.ok(!/url\(\s*['"]?https?:/i.test(html), "index.html loads a remote asset from CSS");
-  for (const m of html.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)) {
-    assert.ok(m[1]!.startsWith("./"), `index.html loads the script ${m[1]}, which is not local`);
+  // Every generated rule page meets the same contract on the built output.
+  const site = assemble();
+  try {
+    const pages = walk(site).filter((f) => /^rules\/.+\/index\.html$/.test(f));
+    assert.ok(pages.length > 0, "the build emitted no rule pages");
+    for (const page of pages) {
+      contract(page, readFileSync(join(site, page), "utf8"));
+    }
+  } finally {
+    rmSync(site, { recursive: true, force: true });
   }
-  for (const m of html.matchAll(/\bhref\s*=\s*["'](https?:[^"']+)["']/gi)) {
-    assert.match(m[1]!, /^https:\/\/github\.com\/Bubblegunn\/ai-slop-linter/, `index.html points at ${m[1]}`);
-  }
+
   // The engine is imported, not reimplemented: no rule pattern is restated in the page.
   assert.ok(/from\s+"\.\/engine\/index\.js"/.test(js), "the page must import the engine");
   assert.ok(!/Signs of AI writing/.test(js), "a rule's source string appears in the page, so a rule was copied");
