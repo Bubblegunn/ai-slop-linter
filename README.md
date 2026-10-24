@@ -500,7 +500,7 @@ import { lintText, fixText } from "ai-slop-linter";
 
 const r = lintText("post.md", text);
 r.grade;              // "A" .. "F"
-r.findings[0];        // { rule, severity, line, column, excerpt, message, fix? }
+r.findings[0];        // { rule, severity, line, column, endLine, endColumn, excerpt, message, fix? }
 
 const f = fixText("post.md", text);
 f.text;               // fixed text

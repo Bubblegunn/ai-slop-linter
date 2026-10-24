@@ -508,7 +508,7 @@ import { lintText, fixText } from "ai-slop-linter";
 
 const r = lintText("post.md", text);
 r.grade;              // "A" .. "F"
-r.findings[0];        // { rule, severity, line, column, excerpt, message, fix? }
+r.findings[0];        // { rule, severity, line, column, endLine, endColumn, excerpt, message, fix? }
 
 const f = fixText("post.md", text);
 f.text;               // fixed text
@@ -699,7 +699,7 @@ npx --yes ai-slop-linter --mcp
 | `compare_facts` | `before` and `after` (two texts), and optionally `language` | the facts the rewrite lost or added: numbers, versions, dates, urls, issue ids, quotations, code and names, first-person words (kind `person`) the rewrite added or dropped, claim words (kind `claim`) it added, an approximator or bound next to a number (kind `qualifier`, such as `up to 3`) that it dropped or added, and how many facts were kept. Set `language` for a text under about 25 words or in Turkish, which detection cannot tell |
 | `explain_rule` | `rule` | why the rule exists, an example that trips it, a rewrite, and when to ignore it |
 
-A finding has `rule`, `severity`, `line`, `column`, `excerpt`, `message` and `fixable`. A fixable finding also carries `fix`, the character range (`start`, `end`, in UTF-16 code units) and the `replacement`, so the agent can apply it without guessing. The result also has `score` (weighted findings per 1,000 words), `grade` (null under 50 words) and `errors`.
+A finding has `rule`, `severity`, `line`, `column`, `endLine`, `endColumn`, `excerpt`, `message` and `fixable`. A fixable finding also carries `fix`, the character range (`start`, `end`, in UTF-16 code units) and the `replacement`, so the agent can apply it without guessing. The result also has `score` (weighted findings per 1,000 words), `grade` (null under 50 words) and `errors`.
 
 `explain_rule`, `only` and `ignore` accept the ids of the language pack rules (`fr/closer`) as well as the English ones.
 

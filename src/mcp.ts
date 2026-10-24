@@ -38,7 +38,7 @@ const optionProperties = {
 };
 
 const RESULT_NOTE =
-  "Returns line and column for each finding, a score (weighted findings per 1,000 words), a grade A to F (null under 50 words), and for a safe fix the exact character range and replacement. It lists tells; it does not judge who wrote the text.";
+  "Returns line and column, and where the finding ends, for each finding, a score (weighted findings per 1,000 words), a grade A to F (null under 50 words), and for a safe fix the exact character range and replacement. It lists tells; it does not judge who wrote the text.";
 
 export const TOOLS = [
   {
