@@ -18,6 +18,8 @@ import { join } from "node:path";
 import { allRules } from "../src/index.js";
 import { commitRules } from "../src/commits.js";
 import { renderSarif } from "../src/sarif.js";
+import { rulePageUrl, ruleHelpText, SITE_ROOT } from "../src/rule-pages.js";
+import { explain } from "../src/cli.js";
 import type { Rule } from "../src/doc.js";
 
 const ROOT = process.cwd();
@@ -80,8 +82,10 @@ test("every page says what its rule says: title, severity, source, why, example,
   for (const rule of ruleSet) {
     const html = pageText(rule.id);
     // The example fields can end in a newline; the pages quote them trimmed, the way --explain
-    // prints them, so the expectation is trimmed the same way. Nothing else is altered.
-    for (const field of [rule.id, rule.title, rule.why, rule.source, rule.example.before, rule.example.after, rule.ignoreWhen, rule.severity]) {
+    // prints them, so the expectation is trimmed the same way. Nothing else is altered. The
+    // severity oracle is anchored to the severity line, so the word appearing elsewhere in a
+    // rule's prose cannot stand in for it.
+    for (const field of [rule.id, rule.title, rule.why, rule.source, rule.example.before, rule.example.after, rule.ignoreWhen, `severity: ${rule.severity}`]) {
       assert.ok(html.includes(esc(field.trimEnd())), `${rule.id}: the page is missing ${JSON.stringify(field.slice(0, 60))}`);
     }
     assert.ok(html.includes(`<title>`), `${rule.id}: no title`);
@@ -120,11 +124,26 @@ test("every SARIF rule carries its page URL and help text and markdown from its 
       // Line by line, because the plain-text help indents each line of a field, which breaks
       // the raw string at a multi-line example's blank line. Every line of the field has to be
       // there, so a help string carrying another rule's material still fails.
-      for (const field of [rule.why, rule.source, rule.example.before, rule.example.after, rule.ignoreWhen]) {
+      for (const field of [rule.title, rule.why, rule.source, rule.example.before, rule.example.after, rule.ignoreWhen]) {
         const lines = field.trimEnd().split("\n").filter((line) => line.trim() !== "");
         assert.ok(lines.every((line) => help!.includes(line)), `${rule.id}: help.${format} is missing ${JSON.stringify(field.slice(0, 60))}`);
       }
     }
+  }
+});
+
+test("the page URL embeds the rule id verbatim", () => {
+  // The URL must not be slugified or case-folded: the registry is lowercase today, and this
+  // guard is for the day it is not, when a folded or slugified id would point at a page the
+  // build never wrote.
+  assert.equal(rulePageUrl("Dash"), `${SITE_ROOT}rules/Dash/`);
+});
+
+test("the plain-text help is --explain, byte for byte", () => {
+  // docs/SARIF.md states help.text carries the same material --explain prints; the property is
+  // pinned as equality so the two renderers cannot drift apart silently.
+  for (const rule of ruleSet) {
+    assert.equal(ruleHelpText(rule), explain(rule), `${rule.id}: help.text and --explain disagree`);
   }
 });
 
