@@ -11,7 +11,9 @@ import { lintText, rules } from "../dist/src/index.js";
 // Examples use a placeholder (`RULE`), and these tests prove the rules are on at the end of each file.
 const FILES = ["README.md", "README.tr.md", "CONTRIBUTING.md", ...readdirSync("docs").filter((f) => f.endsWith(".md")).map((f) => `docs/${f}`)];
 const IDS = new Set([...rules, ...commitRules].map((r) => r.id));
-const DIRECTIVE = /<!--\s*slop-ignore(?:-next-line)?\s+([\w,\s-]+?)\s*-->/g;
+// The same id grammar the scanner in src/doc.ts accepts, so this guard scans everything the
+// scanner treats as a directive.
+const DIRECTIVE = /<!--\s*slop-ignore(?:-next-line)?\s+([-\w,\s/]+?)\s*-->/g;
 
 for (const file of FILES) {
   test(`${file}: no ignore comment names a real rule`, () => {
@@ -26,4 +28,15 @@ test("a dash added at the end of the README and of the Turkish README is still f
     const text = `${readFileSync(file, "utf8")}\nA dash — here.\n`;
     assert.ok(lintText(file, text).findings.some((f) => f.rule === "dash"), `${file}: the dash rule is switched off somewhere above the end of the file`);
   }
+});
+
+test("a per-file directive can name a pack rule whose id carries a slash", () => {
+  // Pack rule ids are prefixed with their language (fr/closer), so the directive grammar has to
+  // express a slash. The sentence is the pack-listing fixture's, which the SARIF test proves
+  // triggers the rule.
+  const text = "Essayez Calbo dès aujourd'hui pour vos classes.\n";
+  const bare = lintText("note.md", text, { language: "fr" }).findings.filter((f) => f.rule === "fr/closer");
+  assert.equal(bare.length, 1, "the fixture must trigger fr/closer, or nothing here is tested");
+  const ignored = lintText("note.md", `<!-- slop-ignore fr/closer -->\n${text}`, { language: "fr" }).findings.filter((f) => f.rule === "fr/closer");
+  assert.deepEqual(ignored, [], "fr/closer fired inside a file that ignores it from the first line");
 });

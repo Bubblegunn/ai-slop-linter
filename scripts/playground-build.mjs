@@ -102,7 +102,8 @@ if (!existsSync(join(root, "dist/src/index.js"))) {
 }
 // The rule metadata and the page renderer come from the built source, so the pages and the
 // SARIF help draw on one definition (src/rule-pages.ts). Imported here, after the guard, so a
-// missing dist still gets the friendly message above instead of a module-not-found error.
+// wholly missing dist still gets the friendly message above; a stale dist missing this module
+// fails with a module-not-found error, which `npm run playground` self-heals by rebuilding.
 const { SITE_ROOT, rulePageUrl, renderRulePage } = await import("../dist/src/rule-pages.js");
 const { allRules } = await import("../dist/src/index.js");
 const { commitRules } = await import("../dist/src/commits.js");

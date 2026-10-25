@@ -264,13 +264,13 @@ export function prepare(path: string, text: string): Doc {
   const ignoredLineRules = new Set<string>();
   const lines = text.split("\n");
   lines.forEach((line, i) => {
-    const next = /<!--\s*slop-ignore-next-line(?:\s+([\w,\s-]+?))?\s*-->/.exec(line);
+    const next = /<!--\s*slop-ignore-next-line(?:\s+([-\w,\s/]+?))?\s*-->/.exec(line);
     if (next) {
       const rules = next[1]?.split(/[,\s]+/).filter(Boolean);
       if (rules?.length) for (const r of rules) ignoredLineRules.add(`${i + 2}:${r}`);
       else ignoredLines.add(i + 2);
     }
-    const file = /<!--\s*slop-ignore\s+([\w,\s-]+?)\s*-->/.exec(line);
+    const file = /<!--\s*slop-ignore\s+([-\w,\s/]+?)\s*-->/.exec(line);
     if (file && !/slop-ignore-next-line/.test(line)) {
       for (const r of file[1]!.split(/[,\s]+/).filter(Boolean)) if (!ignoredRules.has(r)) ignoredRules.set(r, i + 1);
     }
