@@ -81,12 +81,15 @@ function readdirRules(): string[] {
 test("every page says what its rule says: title, severity, source, why, example, ignoreWhen", () => {
   for (const rule of ruleSet) {
     const html = pageText(rule.id);
+    // Read the body only: the head repeats the id in <title> and the title and why in the meta
+    // description, so a body that dropped a section would otherwise still pass.
+    const body = html.slice(html.indexOf("<body>"));
     // The example fields can end in a newline; the pages quote them trimmed, the way --explain
     // prints them, so the expectation is trimmed the same way. Nothing else is altered. The
     // severity oracle is anchored to the severity line, so the word appearing elsewhere in a
     // rule's prose cannot stand in for it.
     for (const field of [rule.id, rule.title, rule.why, rule.source, rule.example.before, rule.example.after, rule.ignoreWhen, `severity: ${rule.severity}`]) {
-      assert.ok(html.includes(esc(field.trimEnd())), `${rule.id}: the page is missing ${JSON.stringify(field.slice(0, 60))}`);
+      assert.ok(body.includes(esc(field.trimEnd())), `${rule.id}: the page body is missing ${JSON.stringify(field.slice(0, 60))}`);
     }
     assert.ok(html.includes(`<title>`), `${rule.id}: no title`);
   }
