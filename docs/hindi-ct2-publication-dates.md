@@ -1,4 +1,4 @@
-# CT² Hindi Human Corpus: Publication-Date Limitations
+# CT² Hindi human corpus: publication-date limitations
 
 ## Purpose
 
@@ -24,11 +24,9 @@ The human-written text is stored in the `article` field.
 
 ## Publication-date findings
 
-The available Parquet schema does not include a publication-date field. Date-only entries found in the extracted analysis output range from **14 June 2020 to 30 August 2023**.
+The available Parquet schema does not include a publication-date field. Dates mentioned within article bodies are not reliable substitutes for publication metadata.
 
-These dates were extracted from text output and do not establish the publication dates of the corresponding documents or the complete corpus. Dates mentioned within article bodies are not reliable substitutes for publication metadata.
-
-Therefore, the full publication-date range of the CT² Hindi human corpus cannot be established from the available metadata and extracted output.
+Therefore, the full publication-date range of the CT² Hindi human corpus cannot be established from the available metadata.
 
 ## Implication for the control dataset
 

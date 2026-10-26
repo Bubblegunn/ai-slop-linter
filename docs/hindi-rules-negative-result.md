@@ -278,6 +278,9 @@ Hindi writing.
 Pre-2021 human-written Hindi would be particularly useful for checking whether
 a candidate is actually associated with recent machine-generated writing
 rather than simply reflecting a change in writing style.
+Whether CT² itself can supply such a control is recorded in
+[CT² Hindi publication dates](hindi-ct2-publication-dates.md): its metadata does
+not establish when the human articles were published, so it cannot.
 
 A candidate that continued to separate human and generated text under these
 conditions, while also having an appropriate published source, could be
